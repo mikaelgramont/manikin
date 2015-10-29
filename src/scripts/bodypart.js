@@ -1,40 +1,40 @@
-var BodyPart = function(name) {
+let BodyPart = (name) => {
 	this.parent = null;
 	this.name = name;
 	this.children = {};
 };
 
-BodyPart.prototype.setParent = function(parent) {
+BodyPart.prototype.setParent = (parent) => {
 	this.parent = parent;
 }
 
 // Look into ES6 setters/getters
-BodyPart.prototype.getParent = function() {
+BodyPart.prototype.getParent = () => {
 	return this.parent;
 }
 
-BodyPart.prototype.getName = function() {
+BodyPart.prototype.getName = () => {
 	return this.name;
 }
 
-BodyPart.prototype.getChildByName = function(name) {
+BodyPart.prototype.getChildByName = (name) => {
 	return this.children[name];
 }
 
-BodyPart.prototype.addChild = function(child) {
-	var childName = child.getName();
+BodyPart.prototype.addChild = (child) => {
+	let childName = child.getName();
 	child.setParent(this);
 	if (this.children[childName]) {
-		var existing = this.children[childName];
-		var parentChain = existing.getParentChainAsString()
+		let existing = this.children[childName];
+		let parentChain = existing.getParentChainAsString()
 		throw new Error(`Cannot add child: '${this.name}' already has a child by the name of '${childName}': ${parentChain}`);
 	}
 	this.children[childName] = child;
 }
 
-BodyPart.prototype.getParentChainAsString = function() {
-	var stringParts = [];
-	var currentPart = this;
+BodyPart.prototype.getParentChainAsString = () => {
+	let stringParts = [];
+	let currentPart = this;
 	do {
 		stringParts.unshift(currentPart.getName());
 	} while (currentPart = currentPart.getParent());
