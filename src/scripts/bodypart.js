@@ -50,12 +50,19 @@ class BodyPart {
 		return stringParts.join(' -> ');
 	}
 
-	loadFrameInfo(spritesheet, info) {
+	loadFrameInfo(info) {
 		this.frameInfo = new FrameInfo(info);
 	}
 
 	getFrameInfo() {
 		return this.frameInfo;
+	}
+
+	getDrawInfoForFrame(frameId) {
+		return {
+			'position': [0, 0],
+			'rotation': 0
+		}
 	}
 }
 module.exports = BodyPart;

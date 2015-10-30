@@ -5,7 +5,7 @@ var fs = require('fs-extra');
 var gulp = require('gulp-help')(require('gulp'));
 var gulpWatch = require('gulp-watch');
 var jasmine = require('gulp-jasmine');
- var lazypipe = require('lazypipe');
+var lazypipe = require('lazypipe');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
 var source = require('vinyl-source-stream');
@@ -85,6 +85,6 @@ function compileJs(srcDir, srcFilename, destDir, options) {
 }
 
 gulp.task('test', function () {
-    return gulp.src('spec/test.js')
+    return gulp.src('src/spec/test.js')
         .pipe(jasmine());
 });

@@ -12,6 +12,46 @@ manikin.forEachPart(function (part, name) {
 	console.log('Part \'' + name + '\'', part, part.getFrameInfo());
 });
 
+var frameInfo = manikin.getDrawInfoForFrame(0);
+var expectedFrameInfo = {
+	'root': {
+		'position': [3, 5],
+		'rotation': 0
+	},
+	'hips': {
+		'position': [0, 0],
+		'rotation': 20
+	},
+	'torso': {
+		'position': [0, 0],
+		'rotation': 20
+	},
+	'thigh-left': {
+		'position': [0, 0],
+		'rotation': -5
+	},
+	'arm-left': {
+		'position': [0, 0],
+		'rotation': 35
+	},
+	'arm-left': {
+		'position': [0, 0],
+		'rotation': 80
+	}
+};
+
+for (var partName in expectedFrameInfo) {
+	var got = frameInfo[partName];
+	var expected = expectedFrameInfo[partName];
+	if (got.position[0] != expected.position[0] || got.position[1] != expected.position[1]) {
+		console.error('Position for ' + partName + ' does is incorrect.', 'Got:', got.position, 'expected:', expected.position);
+	}
+	if (got.rotation != expected.rotation) {
+		console.error('Rotation for ' + partName + ' does is incorrect.', 'Got:', got.rotation, 'expected:', expected.rotation);
+	}
+}
+console.log('Done testing');
+
 },{"./body":2}],2:[function(require,module,exports){
 'use strict';
 
@@ -32,53 +72,62 @@ var Body = (function () {
 		// TODO: create a frame information object to pass around
 
 		this.root = new BodyPart('root');
-		this.initParts();
+		this.spritesheet = null;
+		this.duration = null;
+		this.looping = null;
+		this.createParts();
 	}
 
 	_createClass(Body, [{
-		key: 'initParts',
-		value: function initParts() {
+		key: 'createParts',
+		value: function createParts() {
 			var hips = new BodyPart('hips');
 			this.root.addChild(hips);
 
 			var torso = new BodyPart('torso');
 			hips.addChild(torso);
 
-			var neck = new BodyPart('neck');
-			torso.addChild(neck);
+			// let neck = new BodyPart('neck');
+			// torso.addChild(neck);
 
-			var head = new BodyPart('head');
-			neck.addChild(head);
+			// let head = new BodyPart('head');
+			// neck.addChild(head);
 
 			var leftArm = new BodyPart('arm-left');
 			torso.addChild(leftArm);
 
-			var leftHand = new BodyPart('hand-left');
-			leftArm.addChild(leftHand);
+			var leftForeArm = new BodyPart('forearm-left');
+			leftArm.addChild(leftForeArm);
 
-			var rightArm = new BodyPart('arm-right');
-			torso.addChild(rightArm);
+			// let leftHand = new BodyPart('hand-left');
+			// leftForeArm.addChild(leftHand);
 
-			var rightHand = new BodyPart('hand-right');
-			rightArm.addChild(rightHand);
+			// let rightArm = new BodyPart('arm-right');
+			// torso.addChild(rightArm);
+
+			// let rightForeArm = new BodyPart('forearm-right');
+			// rightArm.addChild(rightForeArm);
+
+			// let rightHand = new BodyPart('hand-right');
+			// rightForeArm.addChild(rightHand);
 
 			var leftThigh = new BodyPart('thigh-left');
 			hips.addChild(leftThigh);
 
-			var leftLeg = new BodyPart('leg-left');
-			leftThigh.addChild(leftLeg);
+			// let leftLeg = new BodyPart('leg-left');
+			// leftThigh.addChild(leftLeg);
 
-			var leftFoot = new BodyPart('foot-left');
-			leftLeg.addChild(leftFoot);
+			// let leftFoot = new BodyPart('foot-left');
+			// leftLeg.addChild(leftFoot);
 
-			var rightThigh = new BodyPart('thigh-right');
-			hips.addChild(rightThigh);
+			// let rightThigh = new BodyPart('thigh-right');
+			// hips.addChild(rightThigh);
 
-			var rightLeg = new BodyPart('leg-right');
-			leftThigh.addChild(rightLeg);
+			// let rightLeg = new BodyPart('leg-right');
+			// leftThigh.addChild(rightLeg);
 
-			var rightFoot = new BodyPart('foot-right');
-			rightLeg.addChild(rightFoot);
+			// let rightFoot = new BodyPart('foot-right');
+			// rightLeg.addChild(rightFoot);
 		}
 	}, {
 		key: 'forEachPart',
@@ -108,6 +157,9 @@ var Body = (function () {
 	}, {
 		key: 'loadAnimation',
 		value: function loadAnimation(animObject) {
+			this.spritesheet = animObject.spritesheet;
+			this.duration = animObject.duration;
+			this.looping = animObject.looping;
 			this.forEachPart(function (part, name) {
 				if (!animObject.frames[name]) {
 					//throw new Error(`No frame info for body part ${name} in animation object:`, animObject);
@@ -116,6 +168,15 @@ var Body = (function () {
 
 				part.loadFrameInfo(animObject.frames[name]);
 			});
+		}
+	}, {
+		key: 'getDrawInfoForFrame',
+		value: function getDrawInfoForFrame(frameId) {
+			var calculated = {};
+			this.forEachPart(function (part, name) {
+				calculated[name] = part.getDrawInfoForFrame(frameId);
+			});
+			return calculated;
 		}
 	}]);
 
@@ -203,6 +264,14 @@ var BodyPart = (function () {
 		value: function getFrameInfo() {
 			return this.frameInfo;
 		}
+	}, {
+		key: 'getDrawInfoForFrame',
+		value: function getDrawInfoForFrame(frameId) {
+			return {
+				'position': [0, 0],
+				'rotation': 0
+			};
+		}
 	}]);
 
 	return BodyPart;
@@ -218,7 +287,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var FrameInfo = function FrameInfo(info) {
 	_classCallCheck(this, FrameInfo);
 
-	this.info = info;
+	// this.source = info.source;
+	// this.center = info.center;
+	this.rotation = info.rotation;
 };
 
 module.exports = FrameInfo;

@@ -19,8 +19,8 @@ class Body {
 		let hips = new BodyPart('hips');
 		this.root.addChild(hips);
 
-		// let torso = new BodyPart('torso');
-		// hips.addChild(torso);
+		let torso = new BodyPart('torso');
+		hips.addChild(torso);
 
 		// let neck = new BodyPart('neck');
 		// torso.addChild(neck);
@@ -108,28 +108,11 @@ class Body {
 	}
 
 	getDrawInfoForFrame(frameId) {
-		return {
-			'root': {
-				'position': [3, 5],
-				'rotation': 0
-			},
-			'hips': {
-				'position': [0, 0],
-				'rotation': 20
-			},
-			'thigh-left': {
-				'position': [0, 0],
-				'rotation': -5
-			},
-			'arm-left': {
-				'position': [0, 0],
-				'rotation': 35
-			},
-			'arm-left': {
-				'position': [0, 0],
-				'rotation': 80
-			},
-		}
+		let calculated = {}
+		this.forEachPart((part, name) => {
+			calculated[name] = part.getDrawInfoForFrame(frameId);
+		});
+		return calculated;
 	}
 }
 
