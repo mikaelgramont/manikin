@@ -1,3 +1,8 @@
+- How to pass data between parent page (index.html) and a Babel-compiled ES6 bundle?
+
+
+Use http://www.pixijs.com/
+
 ES6 compilation resources:
 
 - https://gist.github.com/danharper/3ca2273125f500429945
@@ -21,34 +26,15 @@ each part needs to be have:
 - an offset from the parent
 
 animation config (json):
-{
-	// The path to the spritesheet. May be overriden in each child.
-	// TEST: must load.
-	'spritesheet': '/path/to/spritesheet.png',
-	// The number of frames in the animation
-	'duration': 20,
-	// Whether to loop at the end. Frame rate and loop count are UI settings.
-	'looping': 1,
-	// An object holding an entry for all parts of the body.
-	// TEST: Must be 1-1 match b/w body content and config
-	'animations': {
-		// The name of the part in the body hierarchy
-		'manikin': {
-			// source is a rectangle in the spritesheet. Format: (x1, y1, x2, y2)
-			// TEST: coordinates must be within image bounds.
-			'source': [20, 20, 120, 120],
-			// center is an offset from the top left corner, used to nudge the image (and children) a bit.
-			'center': [3, 5],
-			// A list of kvp's between frame id and rotation (in degrees).
-			// TEST: Keyframe ids must be lower than number of frames in animation.
-			'rotation': {
-				0: 0,
-				5: 50,
-				15: -50
-				// Since there are 20 frames and the anim is looping,
-				// we duplicate 0, and use that as frame 21 for calculations,
-				// but we drop it from the replay and instead go back to 0.
-			}
-		}
-	}
-}
+rotation about a point:
+	If you rotate point (px, py) around point (ox, oy) by angle theta you'll get:
+	p'x = cos(theta) * (px-ox) - sin(theta) * (py-oy) + ox
+	p'y = sin(theta) * (px-ox) + cos(theta) * (py-oy) + oy
+
+	let r = parent.rotation;
+	let pp = parent.rotation;
+	let cp = child.position;
+	child.position.x = Math.cos(r) * (cp.x - pp.x) - Math.sin(r) * (cp.y - pp.y) + pp.x;
+	child.position.y = Math.sin(r) * (cp.x - pp.x) + Math.cos(r) * (cp.y - pp.y) + pp.y;
+
+

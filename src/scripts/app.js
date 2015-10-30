@@ -1,13 +1,10 @@
 let Body = require('./body');
 
-let manikin = new Body('buddy');
+let appConfig = window.appConfig;
 
+let manikin = new Body(appConfig.bodyName);
+manikin.loadAnimation(appConfig.animation);
 
-
-
-
-
-// var rightArm2 = new BodyPart('arm-right');
-// torso.addChild(rightArm2);
-
-// console.log(rightArm.getParentChainAsString());
+manikin.forEachPart((part, name) => {
+	console.log(`Part '${name}'`, part, part.getFrameInfo());
+});

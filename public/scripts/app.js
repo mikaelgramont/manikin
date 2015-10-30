@@ -3,117 +3,261 @@
 
 var Body = require('./body');
 
-var manikin = new Body('buddy');
+var appConfig = window.appConfig;
 
-// var rightArm2 = new BodyPart('arm-right');
-// torso.addChild(rightArm2);
+var manikin = new Body(appConfig.bodyName);
+manikin.loadAnimation(appConfig.animation);
 
-// console.log(rightArm.getParentChainAsString());
+manikin.forEachPart(function (part, name) {
+	console.log('Part \'' + name + '\'', part, part.getFrameInfo());
+});
 
 },{"./body":2}],2:[function(require,module,exports){
 'use strict';
 
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
 var BodyPart = require('./bodypart');
+var Queue = require('./queue');
 
-var Body = function Body(name) {
-	undefined.name = name;
-	undefined.root = new BodyPart('manikin');
-};
+var Body = (function () {
+	function Body(name, queue) {
+		_classCallCheck(this, Body);
 
-Body.prototype.init = function () {
-	var hips = new BodyPart('hips');
-	undefined.root.addChild(hips);
+		this.name = name;
+		this.queue = new Queue();
 
-	var torso = new BodyPart('torso');
-	hips.addChild(torso);
+		// TODO: create a frame information object to pass around
 
-	var neck = new BodyPart('neck');
-	torso.addChild(neck);
+		this.root = new BodyPart('root');
+		this.initParts();
+	}
 
-	var head = new BodyPart('head');
-	neck.addChild(head);
+	_createClass(Body, [{
+		key: 'initParts',
+		value: function initParts() {
+			var hips = new BodyPart('hips');
+			this.root.addChild(hips);
 
-	var leftArm = new BodyPart('arm-left');
-	torso.addChild(leftArm);
+			var torso = new BodyPart('torso');
+			hips.addChild(torso);
 
-	var leftHand = new BodyPart('hand-left');
-	leftArm.addChild(leftHand);
+			var neck = new BodyPart('neck');
+			torso.addChild(neck);
 
-	var rightArm = new BodyPart('arm-right');
-	torso.addChild(rightArm);
+			var head = new BodyPart('head');
+			neck.addChild(head);
 
-	var rightHand = new BodyPart('hand-right');
-	rightArm.addChild(rightHand);
+			var leftArm = new BodyPart('arm-left');
+			torso.addChild(leftArm);
 
-	var leftThigh = new BodyPart('thigh-left');
-	hips.addChild(leftThigh);
+			var leftHand = new BodyPart('hand-left');
+			leftArm.addChild(leftHand);
 
-	var leftLeg = new BodyPart('leg-left');
-	leftThigh.addChild(leftLeg);
+			var rightArm = new BodyPart('arm-right');
+			torso.addChild(rightArm);
 
-	var leftFoot = new BodyPart('foot-left');
-	leftLeg.addChild(leftFoot);
+			var rightHand = new BodyPart('hand-right');
+			rightArm.addChild(rightHand);
 
-	var rightThigh = new BodyPart('thigh-right');
-	hips.addChild(rightThigh);
+			var leftThigh = new BodyPart('thigh-left');
+			hips.addChild(leftThigh);
 
-	var rightLeg = new BodyPart('leg-right');
-	leftThigh.addChild(rightLeg);
+			var leftLeg = new BodyPart('leg-left');
+			leftThigh.addChild(leftLeg);
 
-	var rightFoot = new BodyPart('foot-right');
-	rightLeg.addChild(rightFoot);
-};
+			var leftFoot = new BodyPart('foot-left');
+			leftLeg.addChild(leftFoot);
+
+			var rightThigh = new BodyPart('thigh-right');
+			hips.addChild(rightThigh);
+
+			var rightLeg = new BodyPart('leg-right');
+			leftThigh.addChild(rightLeg);
+
+			var rightFoot = new BodyPart('foot-right');
+			rightLeg.addChild(rightFoot);
+		}
+	}, {
+		key: 'forEachPart',
+		value: function forEachPart(fn) {
+			// TODO: build a queue of body parts, and run fn on them.
+			var explored = [];
+			this.queue.flush();
+			this.queue.push(this.root);
+			fn(this.root, this.root.getName());
+			var currentPart;
+
+			while ((currentPart = this.queue.pop()) !== undefined) {
+				var currentName = currentPart.getName();
+				var children = currentPart.getChildren();
+
+				for (var _name in children) {
+					var child = children[_name];
+					if (!explored[_name]) {
+						explored[_name] = true;
+						fn(child, _name);
+						this.queue.push(child);
+					}
+				}
+			}
+			this.queue.flush();
+		}
+	}, {
+		key: 'loadAnimation',
+		value: function loadAnimation(animObject) {
+			this.forEachPart(function (part, name) {
+				if (!animObject.frames[name]) {
+					//throw new Error(`No frame info for body part ${name} in animation object:`, animObject);
+					return;
+				}
+
+				part.loadFrameInfo(animObject.frames[name]);
+			});
+		}
+	}]);
+
+	return Body;
+})();
 
 module.exports = Body;
 
-},{"./bodypart":3}],3:[function(require,module,exports){
+},{"./bodypart":3,"./queue":5}],3:[function(require,module,exports){
 'use strict';
 
-var BodyPart = function BodyPart(name) {
-	undefined.parent = null;
-	undefined.name = name;
-	undefined.children = {};
-};
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-BodyPart.prototype.setParent = function (parent) {
-	undefined.parent = parent;
-};
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-// Look into ES6 setters/getters
-BodyPart.prototype.getParent = function () {
-	return undefined.parent;
-};
+var FrameInfo = require('./frameinfo');
 
-BodyPart.prototype.getName = function () {
-	return undefined.name;
-};
+var BodyPart = (function () {
+	function BodyPart(name) {
+		_classCallCheck(this, BodyPart);
 
-BodyPart.prototype.getChildByName = function (name) {
-	return undefined.children[name];
-};
-
-BodyPart.prototype.addChild = function (child) {
-	var childName = child.getName();
-	child.setParent(undefined);
-	if (undefined.children[childName]) {
-		var existing = undefined.children[childName];
-		var parentChain = existing.getParentChainAsString();
-		throw new Error('Cannot add child: \'' + undefined.name + '\' already has a child by the name of \'' + childName + '\': ' + parentChain);
+		this.parent = null;
+		this.name = name;
+		this.children = {};
+		this.frameInfo = null;
 	}
-	undefined.children[childName] = child;
-};
 
-BodyPart.prototype.getParentChainAsString = function () {
-	var stringParts = [];
-	var currentPart = undefined;
-	do {
-		stringParts.unshift(currentPart.getName());
-	} while (currentPart = currentPart.getParent());
+	_createClass(BodyPart, [{
+		key: 'setParent',
+		value: function setParent(parent) {
+			this.parent = parent;
+		}
 
-	return stringParts.join(' -> ');
-};
+		// Look into ES6 setters/getters
+	}, {
+		key: 'getParent',
+		value: function getParent() {
+			return this.parent;
+		}
+	}, {
+		key: 'getName',
+		value: function getName() {
+			return this.name;
+		}
+	}, {
+		key: 'getChildren',
+		value: function getChildren() {
+			return this.children;
+		}
+	}, {
+		key: 'getChildByName',
+		value: function getChildByName(name) {
+			return this.children[name];
+		}
+	}, {
+		key: 'addChild',
+		value: function addChild(child) {
+			var childName = child.getName();
+			child.setParent(this);
+			if (this.children[childName]) {
+				var existing = this.children[childName];
+				var parentChain = existing.getParentChainAsString();
+				throw new Error('Cannot add child: \'' + this.name + '\' already has a child by the name of \'' + childName + '\': ' + parentChain);
+			}
+			this.children[childName] = child;
+		}
+	}, {
+		key: 'getParentChainAsString',
+		value: function getParentChainAsString() {
+			var stringParts = [];
+			var currentPart = this;
+			do {
+				stringParts.unshift(currentPart.getName());
+			} while (currentPart = currentPart.getParent());
+
+			return stringParts.join(' -> ');
+		}
+	}, {
+		key: 'loadFrameInfo',
+		value: function loadFrameInfo(info) {
+			this.frameInfo = new FrameInfo(info);
+		}
+	}, {
+		key: 'getFrameInfo',
+		value: function getFrameInfo() {
+			return this.frameInfo;
+		}
+	}]);
+
+	return BodyPart;
+})();
 
 module.exports = BodyPart;
+
+},{"./frameinfo":4}],4:[function(require,module,exports){
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var FrameInfo = function FrameInfo(info) {
+	_classCallCheck(this, FrameInfo);
+
+	this.info = info;
+};
+
+module.exports = FrameInfo;
+
+},{}],5:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Queue = (function () {
+	function Queue() {
+		_classCallCheck(this, Queue);
+
+		this.arr = [];
+	}
+
+	_createClass(Queue, [{
+		key: "push",
+		value: function push(node) {
+			this.arr.push(node);
+		}
+	}, {
+		key: "pop",
+		value: function pop() {
+			return this.arr.shift();
+		}
+	}, {
+		key: "flush",
+		value: function flush() {
+			this.arr.length = 0;
+		}
+	}]);
+
+	return Queue;
+})();
+
+module.exports = Queue;
 
 },{}]},{},[1])
 

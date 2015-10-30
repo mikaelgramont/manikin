@@ -1,45 +1,61 @@
-let BodyPart = (name) => {
-	this.parent = null;
-	this.name = name;
-	this.children = {};
-};
+let FrameInfo = require('./frameinfo');
 
-BodyPart.prototype.setParent = (parent) => {
-	this.parent = parent;
-}
-
-// Look into ES6 setters/getters
-BodyPart.prototype.getParent = () => {
-	return this.parent;
-}
-
-BodyPart.prototype.getName = () => {
-	return this.name;
-}
-
-BodyPart.prototype.getChildByName = (name) => {
-	return this.children[name];
-}
-
-BodyPart.prototype.addChild = (child) => {
-	let childName = child.getName();
-	child.setParent(this);
-	if (this.children[childName]) {
-		let existing = this.children[childName];
-		let parentChain = existing.getParentChainAsString()
-		throw new Error(`Cannot add child: '${this.name}' already has a child by the name of '${childName}': ${parentChain}`);
+class BodyPart {
+	constructor(name) {
+		this.parent = null;
+		this.name = name;
+		this.children = {};
+		this.frameInfo = null;
 	}
-	this.children[childName] = child;
+
+	setParent(parent) {
+		this.parent = parent;
+	}
+
+	// Look into ES6 setters/getters
+	getParent() {
+		return this.parent;
+	}
+
+	getName() {
+		return this.name;
+	}
+
+	getChildren() {
+		return this.children;
+	}
+
+	getChildByName(name) {
+		return this.children[name];
+	}
+
+	addChild(child) {
+		let childName = child.getName();
+		child.setParent(this);
+		if (this.children[childName]) {
+			let existing = this.children[childName];
+			let parentChain = existing.getParentChainAsString()
+			throw new Error(`Cannot add child: '${this.name}' already has a child by the name of '${childName}': ${parentChain}`);
+		}
+		this.children[childName] = child;
+	}
+
+	getParentChainAsString() {
+		let stringParts = [];
+		let currentPart = this;
+		do {
+			stringParts.unshift(currentPart.getName());
+		} while (currentPart = currentPart.getParent());
+
+		return stringParts.join(' -> ');
+	}
+
+	loadFrameInfo(info) {
+		this.frameInfo = new FrameInfo(info);
+	}
+
+	getFrameInfo() {
+		return this.frameInfo;
+	}
 }
-
-BodyPart.prototype.getParentChainAsString = () => {
-	let stringParts = [];
-	let currentPart = this;
-	do {
-		stringParts.unshift(currentPart.getName());
-	} while (currentPart = currentPart.getParent());
-
-	return stringParts.join(' -> ');
-};
-
 module.exports = BodyPart;
