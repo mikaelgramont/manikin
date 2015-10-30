@@ -97,22 +97,28 @@ class Body {
 		this.spritesheet = animObject.spritesheet;
 		this.duration = animObject.duration;
 		this.looping = animObject.looping;
+
 		this.forEachPart((part, name) => {
 			if (!animObject.frames[name]) {
 				//throw new Error(`No frame info for body part ${name} in animation object:`, animObject);
 				return;
 			}
-
-			part.loadFrameInfo(animObject.frames[name]);
+			part.loadAnimationInfo(this.duration, animObject.frames[name]);
 		});
 	}
 
-	getDrawInfoForFrame(frameId) {
-		let calculated = {}
-		this.forEachPart((part, name) => {
-			calculated[name] = part.getDrawInfoForFrame(frameId);
+	calculateFrames() {
+		this.forEachPart((part) => {
+			part.calculateFrames();
 		});
-		return calculated;
+	}
+
+	getCalculatedFrames() {
+		let calculatedFrames = {};
+		this.forEachPart((part, name) => {
+			calculatedFrames[name] = part.getCalculatedFrames();
+		});
+		return calculatedFrames;
 	}
 }
 

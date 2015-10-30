@@ -1,4 +1,37 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var AnimationInfo = (function () {
+	function AnimationInfo(animationInfo) {
+		_classCallCheck(this, AnimationInfo);
+
+		// this.source = animationInfo.source;
+		this.center = animationInfo.center;
+		this.rotation = animationInfo.rotation;
+	}
+
+	_createClass(AnimationInfo, [{
+		key: "getInterpolatedLocalRotation",
+		value: function getInterpolatedLocalRotation(frameId) {
+			return this.rotation[frameId];
+		}
+	}, {
+		key: "getInterpolatedLocalPosition",
+		value: function getInterpolatedLocalPosition(frameId) {
+			return this.center;
+		}
+	}]);
+
+	return AnimationInfo;
+})();
+
+module.exports = AnimationInfo;
+
+},{}],2:[function(require,module,exports){
 'use strict';
 
 var Body = require('./body');
@@ -7,42 +40,56 @@ var appConfig = window.appConfig;
 
 var manikin = new Body(appConfig.bodyName);
 manikin.loadAnimation(appConfig.animation);
+manikin.calculateFrames();
 
-manikin.forEachPart(function (part, name) {
-	console.log('Part \'' + name + '\'', part, part.getFrameInfo());
-});
+// manikin.forEachPart((part, name) => {
+// 	console.log(`Part '${name}'`, part, part.getFrameInfo());
+// });
 
-var frameInfo = manikin.getDrawInfoForFrame(0);
-var expectedFrameInfo = {
+var calculatedFrames = manikin.getCalculatedFrames();
+var expectedCalculatedFrames = {
 	'root': {
-		'position': [3, 5],
-		'rotation': 0
+		0: {
+			'position': [3, 5],
+			'rotation': 0
+		}
 	},
 	'hips': {
-		'position': [0, 0],
-		'rotation': 20
+		0: {
+			'position': [3, 5],
+			'rotation': 20
+		}
 	},
 	'torso': {
-		'position': [0, 0],
-		'rotation': 20
+		0: {
+			'position': [3, 5],
+			'rotation': 20
+		}
 	},
 	'thigh-left': {
-		'position': [0, 0],
-		'rotation': -5
+		0: {
+			'position': [3, 5],
+			'rotation': -5
+		}
 	},
 	'arm-left': {
-		'position': [0, 0],
-		'rotation': 35
+		0: {
+			'position': [3, 5],
+			'rotation': 55
+		}
 	},
-	'arm-left': {
-		'position': [0, 0],
-		'rotation': 80
+	'forearm-left': {
+		0: {
+			'position': [3, 5],
+			'rotation': 100
+		}
 	}
 };
 
-for (var partName in expectedFrameInfo) {
-	var got = frameInfo[partName];
-	var expected = expectedFrameInfo[partName];
+for (var partName in expectedCalculatedFrames) {
+	var got = calculatedFrames[partName][0];
+	var expected = expectedCalculatedFrames[partName][0];
+
 	if (got.position[0] != expected.position[0] || got.position[1] != expected.position[1]) {
 		console.error('Position for ' + partName + ' does is incorrect.', 'Got:', got.position, 'expected:', expected.position);
 	}
@@ -52,7 +99,7 @@ for (var partName in expectedFrameInfo) {
 }
 console.log('Done testing');
 
-},{"./body":2}],2:[function(require,module,exports){
+},{"./body":3}],3:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -157,26 +204,35 @@ var Body = (function () {
 	}, {
 		key: 'loadAnimation',
 		value: function loadAnimation(animObject) {
+			var _this = this;
+
 			this.spritesheet = animObject.spritesheet;
 			this.duration = animObject.duration;
 			this.looping = animObject.looping;
+
 			this.forEachPart(function (part, name) {
 				if (!animObject.frames[name]) {
 					//throw new Error(`No frame info for body part ${name} in animation object:`, animObject);
 					return;
 				}
-
-				part.loadFrameInfo(animObject.frames[name]);
+				part.loadAnimationInfo(_this.duration, animObject.frames[name]);
 			});
 		}
 	}, {
-		key: 'getDrawInfoForFrame',
-		value: function getDrawInfoForFrame(frameId) {
-			var calculated = {};
-			this.forEachPart(function (part, name) {
-				calculated[name] = part.getDrawInfoForFrame(frameId);
+		key: 'calculateFrames',
+		value: function calculateFrames() {
+			this.forEachPart(function (part) {
+				part.calculateFrames();
 			});
-			return calculated;
+		}
+	}, {
+		key: 'getCalculatedFrames',
+		value: function getCalculatedFrames() {
+			var calculatedFrames = {};
+			this.forEachPart(function (part, name) {
+				calculatedFrames[name] = part.getCalculatedFrames();
+			});
+			return calculatedFrames;
 		}
 	}]);
 
@@ -185,14 +241,14 @@ var Body = (function () {
 
 module.exports = Body;
 
-},{"./bodypart":3,"./queue":5}],3:[function(require,module,exports){
+},{"./bodypart":4,"./queue":5}],4:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-var FrameInfo = require('./frameinfo');
+var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
 	function BodyPart(name) {
@@ -201,7 +257,9 @@ var BodyPart = (function () {
 		this.parent = null;
 		this.name = name;
 		this.children = {};
-		this.frameInfo = null;
+		this.animationInfo = null;
+		this.calculatedFrames = {};
+		this.duration = 0;
 	}
 
 	_createClass(BodyPart, [{
@@ -255,21 +313,51 @@ var BodyPart = (function () {
 			return stringParts.join(' -> ');
 		}
 	}, {
-		key: 'loadFrameInfo',
-		value: function loadFrameInfo(info) {
-			this.frameInfo = new FrameInfo(info);
+		key: 'getAnimationInfo',
+		value: function getAnimationInfo() {
+			return this.animationInfo;
 		}
 	}, {
-		key: 'getFrameInfo',
-		value: function getFrameInfo() {
-			return this.frameInfo;
+		key: 'loadAnimationInfo',
+		value: function loadAnimationInfo(duration, animationInfo) {
+			this.duration = duration;
+			this.animationInfo = new AnimationInfo(animationInfo);
+		}
+	}, {
+		key: 'getCalculatedFrames',
+		value: function getCalculatedFrames() {
+			return this.calculatedFrames;
+		}
+	}, {
+		key: 'calculateFrames',
+		value: function calculateFrames() {
+			for (var f = 0; f < this.duration; f++) {
+				var rotation = this.animationInfo.getInterpolatedLocalRotation(f);
+				var position = this.animationInfo.getInterpolatedLocalPosition(f);
+
+				var _parent = this.getParent();
+				if (_parent) {
+					var parentCalculatedFrames = _parent.getCalculatedFrames();
+
+					rotation += parentCalculatedFrames[f].rotation;
+
+					// TODO: implement real calculations here.
+					position[0] += parentCalculatedFrames[f].position[0];
+					position[1] += parentCalculatedFrames[f].position[1];
+				}
+
+				this.calculatedFrames[f] = {
+					'position': position,
+					'rotation': rotation
+				};
+			}
 		}
 	}, {
 		key: 'getDrawInfoForFrame',
 		value: function getDrawInfoForFrame(frameId) {
 			return {
-				'position': [0, 0],
-				'rotation': 0
+				'position': this.calculatedFrames.position[frameId],
+				'rotation': this.calculatedFrames.rotation[frameId]
 			};
 		}
 	}]);
@@ -279,22 +367,7 @@ var BodyPart = (function () {
 
 module.exports = BodyPart;
 
-},{"./frameinfo":4}],4:[function(require,module,exports){
-"use strict";
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var FrameInfo = function FrameInfo(info) {
-	_classCallCheck(this, FrameInfo);
-
-	// this.source = info.source;
-	// this.center = info.center;
-	this.rotation = info.rotation;
-};
-
-module.exports = FrameInfo;
-
-},{}],5:[function(require,module,exports){
+},{"./animationInfo":1}],5:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -330,6 +403,6 @@ var Queue = (function () {
 
 module.exports = Queue;
 
-},{}]},{},[1])
+},{}]},{},[2])
 
 //# sourceMappingURL=app.js.map

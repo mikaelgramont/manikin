@@ -1,3 +1,13 @@
+- loadAnimation goes to all objects and calculates position and rotation for each frame.
+- then requesting animation info for a given frame will just read from an array.
+
+
+
+
+
+
+
+
 - How to pass data between parent page (index.html) and a Babel-compiled ES6 bundle?
 
 

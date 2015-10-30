@@ -1,11 +1,13 @@
-let FrameInfo = require('./frameinfo');
+let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
 	constructor(name) {
 		this.parent = null;
 		this.name = name;
 		this.children = {};
-		this.frameInfo = null;
+		this.animationInfo = null;
+		this.calculatedFrames = {};
+		this.duration = 0;
 	}
 
 	setParent(parent) {
@@ -50,18 +52,46 @@ class BodyPart {
 		return stringParts.join(' -> ');
 	}
 
-	loadFrameInfo(info) {
-		this.frameInfo = new FrameInfo(info);
+	getAnimationInfo() {
+		return this.animationInfo;
 	}
 
-	getFrameInfo() {
-		return this.frameInfo;
+	loadAnimationInfo(duration, animationInfo) {
+		this.duration = duration;
+		this.animationInfo = new AnimationInfo(animationInfo);
+	}
+
+	getCalculatedFrames() {
+		return this.calculatedFrames;
+	}
+
+	calculateFrames() {
+		for(let f = 0; f < this.duration; f++) {
+			let rotation = this.animationInfo.getInterpolatedLocalRotation(f);
+			let position = this.animationInfo.getInterpolatedLocalPosition(f);
+
+			let parent = this.getParent();
+			if (parent) {
+				let parentCalculatedFrames = parent.getCalculatedFrames();
+
+				rotation += parentCalculatedFrames[f].rotation;
+
+				// TODO: implement real calculations here.
+				position[0] += parentCalculatedFrames[f].position[0];
+				position[1] += parentCalculatedFrames[f].position[1];
+			}
+
+			this.calculatedFrames[f] = {
+				'position': position,
+				'rotation': rotation
+			};
+		}
 	}
 
 	getDrawInfoForFrame(frameId) {
 		return {
-			'position': [0, 0],
-			'rotation': 0
+			'position': this.calculatedFrames.position[frameId],
+			'rotation': this.calculatedFrames.rotation[frameId]
 		}
 	}
 }
