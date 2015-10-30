@@ -50,7 +50,7 @@ class BodyPart {
 		return stringParts.join(' -> ');
 	}
 
-	loadFrameInfo(info) {
+	loadFrameInfo(spritesheet, info) {
 		this.frameInfo = new FrameInfo(info);
 	}
 

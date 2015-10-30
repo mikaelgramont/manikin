@@ -9,55 +9,64 @@ class Body {
 		// TODO: create a frame information object to pass around
 
 		this.root = new BodyPart('root');
-		this.initParts();
+		this.spritesheet = null;
+		this.duration = null;
+		this.looping = null;
+		this.createParts();
 	}
 
-	initParts() {
+	createParts() {
 		let hips = new BodyPart('hips');
 		this.root.addChild(hips);
 
-		let torso = new BodyPart('torso');
-		hips.addChild(torso);
+		// let torso = new BodyPart('torso');
+		// hips.addChild(torso);
 
-		let neck = new BodyPart('neck');
-		torso.addChild(neck);
+		// let neck = new BodyPart('neck');
+		// torso.addChild(neck);
 
-		let head = new BodyPart('head');
-		neck.addChild(head);
+		// let head = new BodyPart('head');
+		// neck.addChild(head);
 
 
 		let leftArm = new BodyPart('arm-left');
 		torso.addChild(leftArm);
 
-		let leftHand = new BodyPart('hand-left');
-		leftArm.addChild(leftHand);
+		let leftForeArm = new BodyPart('forearm-left');
+		leftArm.addChild(leftForeArm);
+
+		// let leftHand = new BodyPart('hand-left');
+		// leftForeArm.addChild(leftHand);
 
 
-		let rightArm = new BodyPart('arm-right');
-		torso.addChild(rightArm);
+		// let rightArm = new BodyPart('arm-right');
+		// torso.addChild(rightArm);
 
-		let rightHand = new BodyPart('hand-right');
-		rightArm.addChild(rightHand);
+		// let rightForeArm = new BodyPart('forearm-right');
+		// rightArm.addChild(rightForeArm);
+
+		// let rightHand = new BodyPart('hand-right');
+		// rightForeArm.addChild(rightHand);
 
 
 		let leftThigh = new BodyPart('thigh-left');
 		hips.addChild(leftThigh);
 
-		let leftLeg = new BodyPart('leg-left');
-		leftThigh.addChild(leftLeg);
+		// let leftLeg = new BodyPart('leg-left');
+		// leftThigh.addChild(leftLeg);
 
-		let leftFoot = new BodyPart('foot-left');
-		leftLeg.addChild(leftFoot);
+		// let leftFoot = new BodyPart('foot-left');
+		// leftLeg.addChild(leftFoot);
 
 
-		let rightThigh = new BodyPart('thigh-right');
-		hips.addChild(rightThigh);
+		// let rightThigh = new BodyPart('thigh-right');
+		// hips.addChild(rightThigh);
 
-		let rightLeg = new BodyPart('leg-right');
-		leftThigh.addChild(rightLeg);
+		// let rightLeg = new BodyPart('leg-right');
+		// leftThigh.addChild(rightLeg);
 
-		let rightFoot = new BodyPart('foot-right');
-		rightLeg.addChild(rightFoot);
+		// let rightFoot = new BodyPart('foot-right');
+		// rightLeg.addChild(rightFoot);
 	}
 
 	forEachPart(fn) {
@@ -85,6 +94,9 @@ class Body {
 	}
 
 	loadAnimation(animObject) {
+		this.spritesheet = animObject.spritesheet;
+		this.duration = animObject.duration;
+		this.looping = animObject.looping;
 		this.forEachPart((part, name) => {
 			if (!animObject.frames[name]) {
 				//throw new Error(`No frame info for body part ${name} in animation object:`, animObject);
@@ -93,6 +105,31 @@ class Body {
 
 			part.loadFrameInfo(animObject.frames[name]);
 		});
+	}
+
+	getDrawInfoForFrame(frameId) {
+		return {
+			'root': {
+				'position': [3, 5],
+				'rotation': 0
+			},
+			'hips': {
+				'position': [0, 0],
+				'rotation': 20
+			},
+			'thigh-left': {
+				'position': [0, 0],
+				'rotation': -5
+			},
+			'arm-left': {
+				'position': [0, 0],
+				'rotation': 35
+			},
+			'arm-left': {
+				'position': [0, 0],
+				'rotation': 80
+			},
+		}
 	}
 }
 
