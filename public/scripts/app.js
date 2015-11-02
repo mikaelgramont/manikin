@@ -266,8 +266,11 @@ var Body = (function () {
 
 			this.forEachPart(function (part, name) {
 				var frameInfo = part.getCalculatedFrames()[frameId];
+				ctx.save();
+				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 				ctx.fillStyle = part.color;
 				ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
+				ctx.restore();
 			});
 
 			ctx.restore();
