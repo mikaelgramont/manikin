@@ -1,7 +1,6 @@
 class AnimationInfo {
 	constructor(animationInfo) {
 		// this.source = animationInfo.source;
-		this.center = animationInfo.center;
 		this.rotation = animationInfo.rotation;
 	}
 

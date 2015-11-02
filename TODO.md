@@ -1,5 +1,27 @@
-- loadAnimation goes to all objects and calculates position and rotation for each frame.
-- then requesting animation info for a given frame will just read from an array.
+- for a given frame, go through the hierarchy and calculate the position of the anchor point (let's assume we don't know anything about what's being drawn, just positions) and rotation for each body part.
+
+let frameInfo = {
+	root: {
+		position: [200, 200]
+		rotation: 0
+	},
+	hips: {
+		position: [0, 0]	// relative to parent (root)
+		rotation: 0
+	},
+	torso: {
+		position: [0, -80]
+		rotation: 0
+	},
+	'left-arm': {
+		position: [0, 5]
+		rotation: 45
+	},
+	'left-forearm': {
+		position: [0, 40]
+		rotation: 25
+	},
+}
 
 
 
@@ -8,7 +30,7 @@
 
 
 
-- How to pass data between parent page (index.html) and a Babel-compiled ES6 bundle?
+- How to pass data between parent page (index.html) and a Babel-compiled ES6 bundle or between bundles?
 
 
 Use http://www.pixijs.com/

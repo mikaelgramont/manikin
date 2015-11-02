@@ -1,10 +1,19 @@
 let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
-	constructor(name) {
-		this.parent = null;
+	constructor(name, size, relativePosition, color) {
 		this.name = name;
+		// Dimensions of the body part.
+		this.size = size;
+
+		// Vector going from parent to this part.
+		this.relativePosition = relativePosition;
+
+		this.color = color;
+		
+		this.parent = null;
 		this.children = {};
+		
 		this.animationInfo = null;
 		this.calculatedFrames = {};
 		this.duration = 0;
@@ -67,22 +76,33 @@ class BodyPart {
 
 	calculateFrames() {
 		for(let f = 0; f < this.duration; f++) {
-			let rotation = this.animationInfo.getInterpolatedLocalRotation(f);
-			let position = this.animationInfo.getInterpolatedLocalPosition(f);
+			let	rotation;
+			let absolutePosition;
 
-			let parent = this.getParent();
-			if (parent) {
-				let parentCalculatedFrames = parent.getCalculatedFrames();
+			let localRotation = this.animationInfo.getInterpolatedLocalRotation(f);
+			let relativePosition = this.relativePosition;
 
-				rotation += parentCalculatedFrames[f].rotation;
+			let parentPart = this.getParent();
+			if (parentPart) {
+				let parentCalculatedFrames = parentPart.getCalculatedFrames();
+				rotation = localRotation + parentCalculatedFrames[f].rotation;
+				let angleRad = rotation * Math.PI / 180;
 
 				// TODO: implement real calculations here.
-				position[0] += parentCalculatedFrames[f].position[0];
-				position[1] += parentCalculatedFrames[f].position[1];
+				let parentPosition = parentCalculatedFrames[f].absolutePosition;
+				// let newX = Math.cos(angleRad) * (relativePosition[0] - parentPosition[0]) - Math.sin(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[0];
+				// let newY = Math.sin(angleRad) * (relativePosition[0] - parentPosition[0]) + Math.cos(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[1];
+				let newX = relativePosition[0] + parentPosition[0];
+				let newY = relativePosition[1] + parentPosition[1];
+				absolutePosition = [newX | 0, newY | 0];
+
+			} else {
+				rotation = localRotation;
+				absolutePosition = relativePosition;
 			}
 
 			this.calculatedFrames[f] = {
-				'position': position,
+				'absolutePosition': absolutePosition,
 				'rotation': rotation
 			};
 		}
@@ -90,7 +110,7 @@ class BodyPart {
 
 	getDrawInfoForFrame(frameId) {
 		return {
-			'position': this.calculatedFrames.position[frameId],
+			'absolutePosition': this.calculatedFrames.absolutePosition[frameId],
 			'rotation': this.calculatedFrames.rotation[frameId]
 		}
 	}

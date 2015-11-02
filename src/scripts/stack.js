@@ -1,8 +1,8 @@
-class Queue {
+class Stack {
 	constructor(onpop, onpush) {
 		this.arr = [];
 		this.onpop = onpop;
-		this.onpush = onpush;
+		this.onpush = onpush;		
 	}
 
 	push(node) {
@@ -13,9 +13,9 @@ class Queue {
 	}
 
 	pop() {
-		var node = this.arr.shift();
+		var node = this.arr.pop();
 		if (this.onpop) {
-			this.onpop();
+			this.onpop(node);
 		}
 		return node;
 	}
@@ -24,4 +24,4 @@ class Queue {
 		this.arr.length = 0;
 	}
 }
-module.exports = Queue;
+module.exports = Stack;

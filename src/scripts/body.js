@@ -1,14 +1,15 @@
 let BodyPart = require('./bodypart');
 let Queue = require('./queue');
+let Stack = require('./stack');
 
 class Body {
-	constructor(name, queue) {
+	constructor(name, absolutePosition) {
 		this.name = name;
-		this.queue = new Queue();
+		this.absolutePosition = absolutePosition;
 
 		// TODO: create a frame information object to pass around
 
-		this.root = new BodyPart('root');
+		this.root = new BodyPart('root', [0, 0], [0, 0], '#000000');
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -16,10 +17,10 @@ class Body {
 	}
 
 	createParts() {
-		let hips = new BodyPart('hips');
+		let hips = new BodyPart('hips', [20, 20], [0, 0], '#ff0000');
 		this.root.addChild(hips);
 
-		let torso = new BodyPart('torso');
+		let torso = new BodyPart('torso', [20, 60], [0, -60], '#00ff00');
 		hips.addChild(torso);
 
 		// let neck = new BodyPart('neck');
@@ -29,10 +30,10 @@ class Body {
 		// neck.addChild(head);
 
 
-		let leftArm = new BodyPart('arm-left');
+		let leftArm = new BodyPart('arm-left', [10, 35], [5, 0], '#0000ff');
 		torso.addChild(leftArm);
 
-		let leftForeArm = new BodyPart('forearm-left');
+		let leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], '#ffff00');
 		leftArm.addChild(leftForeArm);
 
 		// let leftHand = new BodyPart('hand-left');
@@ -49,7 +50,7 @@ class Body {
 		// rightForeArm.addChild(rightHand);
 
 
-		let leftThigh = new BodyPart('thigh-left');
+		let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], '#ff00ff');
 		hips.addChild(leftThigh);
 
 		// let leftLeg = new BodyPart('leg-left');
@@ -69,15 +70,26 @@ class Body {
 		// rightLeg.addChild(rightFoot);
 	}
 
-	forEachPart(fn) {
-		// TODO: build a queue of body parts, and run fn on them.
+	forEachPart(fn, onpop, onpush) {
+		this.forEachPartDFS(fn, onpop, onpush);
+	}
+
+	forEachPartDFS(fn, onpop, onpush) {
+		this._forEachPart(fn, new Stack(onpop, onpush));
+	}
+
+	forEachPartBFS(fn, onpop, onpush) {
+		this._forEachPart(fn, new Queue(onpop, onpush));
+	}
+
+	_forEachPart(fn, storage, onpop, onpush) {
 		var explored = [];
-		this.queue.flush();
-		this.queue.push(this.root);
+		storage.flush();
+		storage.push(this.root);
 		fn(this.root, this.root.getName());
 		var currentPart;
 
-		while((currentPart = this.queue.pop()) !== undefined) {
+		while((currentPart = storage.pop()) !== undefined) {
 			let currentName = currentPart.getName();
 			let children = currentPart.getChildren();
 
@@ -86,11 +98,11 @@ class Body {
 				if (!explored[name]) {
 					explored[name] = true;
 					fn(child, name);
-					this.queue.push(child);
+					storage.push(child);
 				}
 			}
 		}
-		this.queue.flush();
+		storage.flush();
 	}
 
 	loadAnimation(animObject) {
@@ -119,6 +131,19 @@ class Body {
 			calculatedFrames[name] = part.getCalculatedFrames();
 		});
 		return calculatedFrames;
+	}
+
+	renderFrame(frameId, ctx) {
+		ctx.save();
+		ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
+
+		this.forEachPart((part, name) => {
+			let frameInfo = part.getCalculatedFrames()[frameId];
+			ctx.fillStyle = part.color;
+			ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
+		});
+
+		ctx.restore();
 	}
 }
 

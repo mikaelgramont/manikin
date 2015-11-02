@@ -10,7 +10,6 @@ var AnimationInfo = (function () {
 		_classCallCheck(this, AnimationInfo);
 
 		// this.source = animationInfo.source;
-		this.center = animationInfo.center;
 		this.rotation = animationInfo.rotation;
 	}
 
@@ -37,67 +36,77 @@ module.exports = AnimationInfo;
 var Body = require('./body');
 
 var appConfig = window.appConfig;
+var ctx = document.getElementById('manikin').getContext('2d');
 
-var manikin = new Body(appConfig.bodyName);
+var manikin = new Body(appConfig.bodyName, [300, 300]);
 manikin.loadAnimation(appConfig.animation);
 manikin.calculateFrames();
+
+ctx.beginPath();
+for (var i = 200; i < 400; i += 10) {
+	ctx.beginPath();
+	ctx.moveTo(200, i);
+	ctx.lineTo(400, i);
+	ctx.stroke();
+
+	ctx.beginPath();
+	ctx.moveTo(i, 200);
+	ctx.lineTo(i, 400);
+	ctx.stroke();
+}
+
+manikin.renderFrame(0, ctx);
 
 // manikin.forEachPart((part, name) => {
 // 	console.log(`Part '${name}'`, part, part.getFrameInfo());
 // });
 
-var calculatedFrames = manikin.getCalculatedFrames();
-var expectedCalculatedFrames = {
-	'root': {
-		0: {
-			'position': [3, 5],
-			'rotation': 0
-		}
-	},
-	'hips': {
-		0: {
-			'position': [3, 5],
-			'rotation': 20
-		}
-	},
-	'torso': {
-		0: {
-			'position': [3, 5],
-			'rotation': 20
-		}
-	},
-	'thigh-left': {
-		0: {
-			'position': [3, 5],
-			'rotation': -5
-		}
-	},
-	'arm-left': {
-		0: {
-			'position': [3, 5],
-			'rotation': 55
-		}
-	},
-	'forearm-left': {
-		0: {
-			'position': [3, 5],
-			'rotation': 100
-		}
-	}
-};
+// let calculatedFrames = manikin.getCalculatedFrames();
+// let expectedCalculatedFrames = {
+// 	'root': {
+// 		0: {
+// 			'rotation': 0
+// 		}
+// 	},
+// 	'hips': {
+// 		0: {
+// 			'rotation': 20
+// 		}
+// 	},
+// 	'torso': {
+// 		0: {
+// 			'rotation': 20
+// 		}
+// 	},	
+// 	'thigh-left': {
+// 		0: {
+// 			'rotation': -5
+// 		}
+// 	},
+// 	'arm-left': {
+// 		0: {
+// 			'rotation': 55
+// 		}
+// 	},
+// 	'forearm-left': {
+// 		0: {
+// 			'rotation': 100
+// 		}
+// 	},
+// };
 
-for (var partName in expectedCalculatedFrames) {
-	var got = calculatedFrames[partName][0];
-	var expected = expectedCalculatedFrames[partName][0];
+// for (let partName in expectedCalculatedFrames) {
+// 	let got = calculatedFrames[partName][0];
+// 	let expected = expectedCalculatedFrames[partName][0];
 
-	if (got.position[0] != expected.position[0] || got.position[1] != expected.position[1]) {
-		console.error('Position for ' + partName + ' does is incorrect.', 'Got:', got.position, 'expected:', expected.position);
-	}
-	if (got.rotation != expected.rotation) {
-		console.error('Rotation for ' + partName + ' does is incorrect.', 'Got:', got.rotation, 'expected:', expected.rotation);
-	}
-}
-console.log('Done testing');
+// 	if (got.position[0] != expected.position[0] || got.position[1] != expected.position[1]) {
+// 		console.error(`Position for ${partName} does is incorrect.`, 'Got:', got.position, 'expected:', expected.position);
+// 	}
+// 	if (got.rotation != expected.rotation) {
+// 		console.error(`Rotation for ${partName} does is incorrect.`, 'Got:', got.rotation, 'expected:', expected.rotation);
+// 	}
+// }
+// console.log('Done testing');
 
 },{"./body":3}],3:[function(require,module,exports){
 'use strict';
@@ -108,17 +117,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var BodyPart = require('./bodypart');
 var Queue = require('./queue');
+var Stack = require('./stack');
 
 var Body = (function () {
-	function Body(name, queue) {
+	function Body(name, absolutePosition) {
 		_classCallCheck(this, Body);
 
 		this.name = name;
-		this.queue = new Queue();
+		this.absolutePosition = absolutePosition;
 
 		// TODO: create a frame information object to pass around
 
-		this.root = new BodyPart('root');
+		this.root = new BodyPart('root', [0, 0], [0, 0], '#000000');
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -128,10 +138,10 @@ var Body = (function () {
 	_createClass(Body, [{
 		key: 'createParts',
 		value: function createParts() {
-			var hips = new BodyPart('hips');
+			var hips = new BodyPart('hips', [20, 20], [0, 0], '#ff0000');
 			this.root.addChild(hips);
 
-			var torso = new BodyPart('torso');
+			var torso = new BodyPart('torso', [20, 60], [0, -60], '#00ff00');
 			hips.addChild(torso);
 
 			// let neck = new BodyPart('neck');
@@ -140,10 +150,10 @@ var Body = (function () {
 			// let head = new BodyPart('head');
 			// neck.addChild(head);
 
-			var leftArm = new BodyPart('arm-left');
+			var leftArm = new BodyPart('arm-left', [10, 35], [5, 0], '#0000ff');
 			torso.addChild(leftArm);
 
-			var leftForeArm = new BodyPart('forearm-left');
+			var leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], '#ffff00');
 			leftArm.addChild(leftForeArm);
 
 			// let leftHand = new BodyPart('hand-left');
@@ -158,7 +168,7 @@ var Body = (function () {
 			// let rightHand = new BodyPart('hand-right');
 			// rightForeArm.addChild(rightHand);
 
-			var leftThigh = new BodyPart('thigh-left');
+			var leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], '#ff00ff');
 			hips.addChild(leftThigh);
 
 			// let leftLeg = new BodyPart('leg-left');
@@ -178,15 +188,29 @@ var Body = (function () {
 		}
 	}, {
 		key: 'forEachPart',
-		value: function forEachPart(fn) {
-			// TODO: build a queue of body parts, and run fn on them.
+		value: function forEachPart(fn, onpop, onpush) {
+			this.forEachPartDFS(fn, onpop, onpush);
+		}
+	}, {
+		key: 'forEachPartDFS',
+		value: function forEachPartDFS(fn, onpop, onpush) {
+			this._forEachPart(fn, new Stack(onpop, onpush));
+		}
+	}, {
+		key: 'forEachPartBFS',
+		value: function forEachPartBFS(fn, onpop, onpush) {
+			this._forEachPart(fn, new Queue(onpop, onpush));
+		}
+	}, {
+		key: '_forEachPart',
+		value: function _forEachPart(fn, storage, onpop, onpush) {
 			var explored = [];
-			this.queue.flush();
-			this.queue.push(this.root);
+			storage.flush();
+			storage.push(this.root);
 			fn(this.root, this.root.getName());
 			var currentPart;
 
-			while ((currentPart = this.queue.pop()) !== undefined) {
+			while ((currentPart = storage.pop()) !== undefined) {
 				var currentName = currentPart.getName();
 				var children = currentPart.getChildren();
 
@@ -195,11 +219,11 @@ var Body = (function () {
 					if (!explored[_name]) {
 						explored[_name] = true;
 						fn(child, _name);
-						this.queue.push(child);
+						storage.push(child);
 					}
 				}
 			}
-			this.queue.flush();
+			storage.flush();
 		}
 	}, {
 		key: 'loadAnimation',
@@ -234,6 +258,20 @@ var Body = (function () {
 			});
 			return calculatedFrames;
 		}
+	}, {
+		key: 'renderFrame',
+		value: function renderFrame(frameId, ctx) {
+			ctx.save();
+			ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
+
+			this.forEachPart(function (part, name) {
+				var frameInfo = part.getCalculatedFrames()[frameId];
+				ctx.fillStyle = part.color;
+				ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
+			});
+
+			ctx.restore();
+		}
 	}]);
 
 	return Body;
@@ -241,7 +279,7 @@ var Body = (function () {
 
 module.exports = Body;
 
-},{"./bodypart":4,"./queue":5}],4:[function(require,module,exports){
+},{"./bodypart":4,"./queue":5,"./stack":6}],4:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -251,12 +289,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
-	function BodyPart(name) {
+	function BodyPart(name, size, relativePosition, color) {
 		_classCallCheck(this, BodyPart);
 
-		this.parent = null;
 		this.name = name;
+		// Dimensions of the body part.
+		this.size = size;
+
+		// Vector going from parent to this part.
+		this.relativePosition = relativePosition;
+
+		this.color = color;
+
+		this.parent = null;
 		this.children = {};
+
 		this.animationInfo = null;
 		this.calculatedFrames = {};
 		this.duration = 0;
@@ -332,22 +379,32 @@ var BodyPart = (function () {
 		key: 'calculateFrames',
 		value: function calculateFrames() {
 			for (var f = 0; f < this.duration; f++) {
-				var rotation = this.animationInfo.getInterpolatedLocalRotation(f);
-				var position = this.animationInfo.getInterpolatedLocalPosition(f);
+				var rotation = undefined;
+				var absolutePosition = undefined;
 
-				var _parent = this.getParent();
-				if (_parent) {
-					var parentCalculatedFrames = _parent.getCalculatedFrames();
+				var localRotation = this.animationInfo.getInterpolatedLocalRotation(f);
+				var relativePosition = this.relativePosition;
 
-					rotation += parentCalculatedFrames[f].rotation;
+				var parentPart = this.getParent();
+				if (parentPart) {
+					var parentCalculatedFrames = parentPart.getCalculatedFrames();
+					rotation = localRotation + parentCalculatedFrames[f].rotation;
+					var angleRad = rotation * Math.PI / 180;
 
 					// TODO: implement real calculations here.
-					position[0] += parentCalculatedFrames[f].position[0];
-					position[1] += parentCalculatedFrames[f].position[1];
+					var parentPosition = parentCalculatedFrames[f].absolutePosition;
+					// let newX = Math.cos(angleRad) * (relativePosition[0] - parentPosition[0]) - Math.sin(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[0];
+					// let newY = Math.sin(angleRad) * (relativePosition[0] - parentPosition[0]) + Math.cos(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[1];
+					var newX = relativePosition[0] + parentPosition[0];
+					var newY = relativePosition[1] + parentPosition[1];
+					absolutePosition = [newX | 0, newY | 0];
+				} else {
+					rotation = localRotation;
+					absolutePosition = relativePosition;
 				}
 
 				this.calculatedFrames[f] = {
-					'position': position,
+					'absolutePosition': absolutePosition,
 					'rotation': rotation
 				};
 			}
@@ -356,7 +413,7 @@ var BodyPart = (function () {
 		key: 'getDrawInfoForFrame',
 		value: function getDrawInfoForFrame(frameId) {
 			return {
-				'position': this.calculatedFrames.position[frameId],
+				'absolutePosition': this.calculatedFrames.absolutePosition[frameId],
 				'rotation': this.calculatedFrames.rotation[frameId]
 			};
 		}
@@ -375,21 +432,30 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Queue = (function () {
-	function Queue() {
+	function Queue(onpop, onpush) {
 		_classCallCheck(this, Queue);
 
 		this.arr = [];
+		this.onpop = onpop;
+		this.onpush = onpush;
 	}
 
 	_createClass(Queue, [{
 		key: "push",
 		value: function push(node) {
 			this.arr.push(node);
+			if (this.onpush) {
+				this.onpush(node);
+			}
 		}
 	}, {
 		key: "pop",
 		value: function pop() {
-			return this.arr.shift();
+			var node = this.arr.shift();
+			if (this.onpop) {
+				this.onpop();
+			}
+			return node;
 		}
 	}, {
 		key: "flush",
@@ -402,6 +468,51 @@ var Queue = (function () {
 })();
 
 module.exports = Queue;
+
+},{}],6:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Stack = (function () {
+	function Stack(onpop, onpush) {
+		_classCallCheck(this, Stack);
+
+		this.arr = [];
+		this.onpop = onpop;
+		this.onpush = onpush;
+	}
+
+	_createClass(Stack, [{
+		key: "push",
+		value: function push(node) {
+			this.arr.push(node);
+			if (this.onpush) {
+				this.onpush(node);
+			}
+		}
+	}, {
+		key: "pop",
+		value: function pop() {
+			var node = this.arr.pop();
+			if (this.onpop) {
+				this.onpop(node);
+			}
+			return node;
+		}
+	}, {
+		key: "flush",
+		value: function flush() {
+			this.arr.length = 0;
+		}
+	}]);
+
+	return Stack;
+})();
+
+module.exports = Stack;
 
 },{}]},{},[2])
 

@@ -1,8 +1,25 @@
 <html>
 <head>
 	<title>Manikin</title>
+	<style>
+		body {
+			background: #eee;
+		}
+		main {
+			height: 100%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		canvas {
+			outline: 1px solid #333;
+		}
+	</style>
 </head>
 <body>
+	<main>
+		<canvas id="manikin" width="600" height="600"></canvas>
+	</main>
 	<script>
 		var appConfig = {
 			bodyName: 'manikin',
@@ -19,11 +36,6 @@
 				frames: {
 					// The name of the part in the body hierarchy
 					'root': {
-						// source is a rectangle in the spritesheet. Format: (x1, y1, x2, y2)
-						// TEST: coordinates must be within image bounds.
-						source: [20, 20, 120, 120],
-						// center is an offset from the top left corner, used to nudge the image (and children) a bit.
-						center: [3, 5],
 						// A list of kvp's between frame id and rotation (in degrees).
 						// TEST: Keyframe ids must be lower than number of frames in animation.
 						rotation: {
@@ -35,33 +47,28 @@
 					},
 					'hips': {
 						rotation: {
-							0:20
+							0:0
 						},
-						center: [0, 0],
 					},
 					'torso': {
 						rotation: {
 							0:0
 						},
-						center: [0, 0],
 					},					
 					'thigh-left': {
 						rotation: {
-							0:-25
+							0:0
 						},
-						center: [0, 0],
 					},
 					'arm-left': {
 						rotation: {
-							0:35
+							0:0
 						},
-						center: [0, 0],
 					},
 					'forearm-left': {
 						rotation: {
-							0:45
+							0:0
 						},
-						center: [0, 0],
 					}
 				}
 			}
