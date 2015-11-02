@@ -9,7 +9,7 @@ manikin.calculateFrames();
 
 
 ctx.beginPath();
-for (let i = 200; i < 400; i+=10) {
+for (let i = 200; i <= 400; i+=10) {
 	ctx.beginPath();
 	ctx.moveTo(200, i);
 	ctx.lineTo(400,i);

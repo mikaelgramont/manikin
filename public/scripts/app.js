@@ -43,7 +43,7 @@ manikin.loadAnimation(appConfig.animation);
 manikin.calculateFrames();
 
 ctx.beginPath();
-for (var i = 200; i < 400; i += 10) {
+for (var i = 200; i <= 400; i += 10) {
 	ctx.beginPath();
 	ctx.moveTo(200, i);
 	ctx.lineTo(400, i);
@@ -128,7 +128,7 @@ var Body = (function () {
 
 		// TODO: create a frame information object to pass around
 
-		this.root = new BodyPart('root', [0, 0], [0, 0], '#000000');
+		this.root = new BodyPart('root', [0, 0], [0, 0], [0, 0], '#000000');
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -138,10 +138,10 @@ var Body = (function () {
 	_createClass(Body, [{
 		key: 'createParts',
 		value: function createParts() {
-			var hips = new BodyPart('hips', [20, 20], [0, 0], '#ff0000');
+			var hips = new BodyPart('hips', [20, 20], [0, 0], [0, 0], '#ff0000');
 			this.root.addChild(hips);
 
-			var torso = new BodyPart('torso', [20, 60], [0, -60], '#00ff00');
+			var torso = new BodyPart('torso', [20, 60], [0, -60], [0, 0], '#00ff00');
 			hips.addChild(torso);
 
 			// let neck = new BodyPart('neck');
@@ -150,10 +150,10 @@ var Body = (function () {
 			// let head = new BodyPart('head');
 			// neck.addChild(head);
 
-			var leftArm = new BodyPart('arm-left', [10, 35], [5, 0], '#0000ff');
+			var leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [0, 0], '#0000ff');
 			torso.addChild(leftArm);
 
-			var leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], '#ffff00');
+			var leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [0, 0], '#ffff00');
 			leftArm.addChild(leftForeArm);
 
 			// let leftHand = new BodyPart('hand-left');
@@ -168,7 +168,7 @@ var Body = (function () {
 			// let rightHand = new BodyPart('hand-right');
 			// rightForeArm.addChild(rightHand);
 
-			var leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], '#ff00ff');
+			var leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [0, 0], '#ff00ff');
 			hips.addChild(leftThigh);
 
 			// let leftLeg = new BodyPart('leg-left');
@@ -188,22 +188,22 @@ var Body = (function () {
 		}
 	}, {
 		key: 'forEachPart',
-		value: function forEachPart(fn, onpop, onpush) {
-			this.forEachPartDFS(fn, onpop, onpush);
+		value: function forEachPart(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
+			this.forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
 		}
 	}, {
 		key: 'forEachPartDFS',
-		value: function forEachPartDFS(fn, onpop, onpush) {
-			this._forEachPart(fn, new Stack(onpop, onpush));
+		value: function forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
+			this._forEachPart(fn, new Stack(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
 		}
 	}, {
 		key: 'forEachPartBFS',
-		value: function forEachPartBFS(fn, onpop, onpush) {
-			this._forEachPart(fn, new Queue(onpop, onpush));
+		value: function forEachPartBFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
+			this._forEachPart(fn, new Queue(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
 		}
 	}, {
 		key: '_forEachPart',
-		value: function _forEachPart(fn, storage, onpop, onpush) {
+		value: function _forEachPart(fn, storage, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
 			var explored = [];
 			storage.flush();
 			storage.push(this.root);
@@ -211,6 +211,10 @@ var Body = (function () {
 			var currentPart;
 
 			while ((currentPart = storage.pop()) !== undefined) {
+				if (beforeLoopOverChildrenFn) {
+					beforeLoopOverChildrenFn(currentPart);
+				}
+
 				var currentName = currentPart.getName();
 				var children = currentPart.getChildren();
 
@@ -221,6 +225,10 @@ var Body = (function () {
 						fn(child, _name);
 						storage.push(child);
 					}
+				}
+
+				if (afterLoopOverChildrenFn) {
+					afterLoopOverChildrenFn(currentPart);
 				}
 			}
 			storage.flush();
@@ -264,14 +272,24 @@ var Body = (function () {
 			ctx.save();
 			ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
+			var beforeFn = function beforeFn(part) {
+				var frameInfo = part.getCalculatedFrames()[frameId];
+				ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+				ctx.save();
+			};
+
+			var afterFn = function afterFn(part) {
+				ctx.restore();
+			};
+
 			this.forEachPart(function (part, name) {
 				var frameInfo = part.getCalculatedFrames()[frameId];
 				ctx.save();
-				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 				ctx.fillStyle = part.color;
 				ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
 				ctx.restore();
-			});
+			}, beforeFn, afterFn);
 
 			ctx.restore();
 		}
@@ -292,7 +310,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
-	function BodyPart(name, size, relativePosition, color) {
+	function BodyPart(name, size, relativePosition, centerOffset, color) {
 		_classCallCheck(this, BodyPart);
 
 		this.name = name;
@@ -301,6 +319,9 @@ var BodyPart = (function () {
 
 		// Vector going from parent to this part.
 		this.relativePosition = relativePosition;
+
+		// Offset to allow parts to rotate around the joints.
+		this.centerOffset = centerOffset;
 
 		this.color = color;
 

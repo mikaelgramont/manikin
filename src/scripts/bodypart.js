@@ -1,13 +1,16 @@
 let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
-	constructor(name, size, relativePosition, color) {
+	constructor(name, size, relativePosition, centerOffset, color) {
 		this.name = name;
 		// Dimensions of the body part.
 		this.size = size;
 
 		// Vector going from parent to this part.
 		this.relativePosition = relativePosition;
+
+		// Offset to allow parts to rotate around the joints.
+		this.centerOffset = centerOffset;
 
 		this.color = color;
 		

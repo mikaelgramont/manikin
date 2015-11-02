@@ -9,7 +9,7 @@ class Body {
 
 		// TODO: create a frame information object to pass around
 
-		this.root = new BodyPart('root', [0, 0], [0, 0], '#000000');
+		this.root = new BodyPart('root', [0, 0], [0, 0], [0, 0], '#000000');
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -17,10 +17,10 @@ class Body {
 	}
 
 	createParts() {
-		let hips = new BodyPart('hips', [20, 20], [0, 0], '#ff0000');
+		let hips = new BodyPart('hips', [20, 20], [0, 0], [0, 0], '#ff0000');
 		this.root.addChild(hips);
 
-		let torso = new BodyPart('torso', [20, 60], [0, -60], '#00ff00');
+		let torso = new BodyPart('torso', [20, 60], [0, -60], [0, 0], '#00ff00');
 		hips.addChild(torso);
 
 		// let neck = new BodyPart('neck');
@@ -30,10 +30,10 @@ class Body {
 		// neck.addChild(head);
 
 
-		let leftArm = new BodyPart('arm-left', [10, 35], [5, 0], '#0000ff');
+		let leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [0, 0], '#0000ff');
 		torso.addChild(leftArm);
 
-		let leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], '#ffff00');
+		let leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [0, 0], '#ffff00');
 		leftArm.addChild(leftForeArm);
 
 		// let leftHand = new BodyPart('hand-left');
@@ -50,7 +50,7 @@ class Body {
 		// rightForeArm.addChild(rightHand);
 
 
-		let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], '#ff00ff');
+		let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [0, 0], '#ff00ff');
 		hips.addChild(leftThigh);
 
 		// let leftLeg = new BodyPart('leg-left');
@@ -70,19 +70,19 @@ class Body {
 		// rightLeg.addChild(rightFoot);
 	}
 
-	forEachPart(fn, onpop, onpush) {
-		this.forEachPartDFS(fn, onpop, onpush);
+	forEachPart(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
+		this.forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
 	}
 
-	forEachPartDFS(fn, onpop, onpush) {
-		this._forEachPart(fn, new Stack(onpop, onpush));
+	forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
+		this._forEachPart(fn, new Stack(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
 	}
 
-	forEachPartBFS(fn, onpop, onpush) {
-		this._forEachPart(fn, new Queue(onpop, onpush));
+	forEachPartBFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
+		this._forEachPart(fn, new Queue(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
 	}
 
-	_forEachPart(fn, storage, onpop, onpush) {
+	_forEachPart(fn, storage, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
 		var explored = [];
 		storage.flush();
 		storage.push(this.root);
@@ -90,8 +90,13 @@ class Body {
 		var currentPart;
 
 		while((currentPart = storage.pop()) !== undefined) {
+			if (beforeLoopOverChildrenFn) {
+				beforeLoopOverChildrenFn(currentPart);
+			}
+
 			let currentName = currentPart.getName();
 			let children = currentPart.getChildren();
+
 
 			for(let name in children) {
 				let child = children[name];
@@ -100,6 +105,10 @@ class Body {
 					fn(child, name);
 					storage.push(child);
 				}
+			}
+
+			if (afterLoopOverChildrenFn) {
+				afterLoopOverChildrenFn(currentPart);
 			}
 		}
 		storage.flush();
@@ -137,14 +146,24 @@ class Body {
 		ctx.save();
 		ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
+		let beforeFn = function(part) {
+			let frameInfo = part.getCalculatedFrames()[frameId];
+			ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+			ctx.save();
+		}
+
+		let afterFn = function(part) {
+			ctx.restore();
+		}
+
 		this.forEachPart((part, name) => {
 			let frameInfo = part.getCalculatedFrames()[frameId];
 			ctx.save();
-			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 			ctx.fillStyle = part.color;
 			ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
 			ctx.restore();
-		});
+		}, beforeFn, afterFn);
 
 		ctx.restore();
 	}
