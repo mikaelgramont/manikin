@@ -21,6 +21,7 @@ for (let i = 200; i <= 400; i+=10) {
 	ctx.stroke();
 }
 
+
 manikin.renderFrame(0, ctx);
 
 // manikin.forEachPart((part, name) => {

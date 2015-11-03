@@ -267,31 +267,111 @@ var Body = (function () {
 			return calculatedFrames;
 		}
 	}, {
+		key: 'instrumentContext',
+		value: function instrumentContext(ctx) {
+			var _ctx = ctx;
+			ctx = {};
+
+			Object.defineProperty(ctx, 'fillStyle', {
+				set: function set(value) {
+					console.log('ctx.fillStyle set to ' + value);
+					_ctx.fillStyle = value;
+				}
+			});
+
+			console.log('ctx', ctx);
+			ctx.save = function () {
+				console.log('ctx.save');
+				_ctx.save();
+			};
+			ctx.restore = function () {
+				console.log('ctx.restore');
+				_ctx.restore();
+			};
+			ctx.translate = function () {
+				for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+					args[_key] = arguments[_key];
+				}
+
+				console.log('ctx.translate', args);
+				_ctx.translate.apply(_ctx, args);
+			};
+			ctx.rotate = function () {
+				for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+					args[_key2] = arguments[_key2];
+				}
+
+				console.log('ctx.rotate', args);
+				_ctx.rotate.apply(_ctx, args);
+			};
+			ctx.fillRect = function () {
+				for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+					args[_key3] = arguments[_key3];
+				}
+
+				console.log('ctx.fillRect', args);
+				_ctx.fillRect.apply(_ctx, args);
+			};
+			return ctx;
+		}
+	}, {
 		key: 'renderFrame',
 		value: function renderFrame(frameId, ctx) {
+			ctx = this.instrumentContext(ctx);
+
 			ctx.save();
 			ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
-			var beforeFn = function beforeFn(part) {
-				var frameInfo = part.getCalculatedFrames()[frameId];
-				ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
-				ctx.save();
-			};
-
-			var afterFn = function afterFn(part) {
-				ctx.restore();
-			};
-
 			this.forEachPart(function (part, name) {
-				var frameInfo = part.getCalculatedFrames()[frameId];
+				console.group('looping on ' + name);
+				var parentParts = part.getParentChain();
+
+				// Get us into a state where everything is local to 'part'.
+				parentParts.forEach(function (parentPart) {
+					console.group('loop for transforms to ' + name + ', parent: ' + parentPart.getName());
+					ctx.save();
+					var frameInfo = parentPart.getCalculatedFrames()[frameId];
+					ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+					ctx.translate(frameInfo.position[0], frameInfo.position[1]);
+					console.groupEnd();
+				});
+
 				ctx.save();
+				var frameInfo = part.getCalculatedFrames()[frameId];
+				// Need to translate again, to position ourselves over the center of rotation.
+				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+				ctx.translate(part.centerOffset[0], part.centerOffset[1]);
 				ctx.fillStyle = part.color;
-				ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
+				ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
 				ctx.restore();
-			}, beforeFn, afterFn);
+
+				// Go back to previous context.
+				parentParts.forEach(function () {
+					ctx.restore();
+				});
+				console.groupEnd();
+			});
 
 			ctx.restore();
+
+			// let beforeFn = function(part) {
+			// 	let frameInfo = part.getCalculatedFrames()[frameId];
+			// 	ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+			// 	ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+			// 	ctx.save();
+			// }
+
+			// let afterFn = function(part) {
+			// 	ctx.restore();
+			// }
+
+			// this.forEachPart((part, name) => {
+			// 	let frameInfo = part.getCalculatedFrames()[frameId];
+			// 	ctx.save();
+			// 	ctx.fillStyle = part.color;
+			// 	ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
+			// 	ctx.restore();
+			// }, beforeFn, afterFn);
 		}
 	}]);
 
@@ -373,6 +453,17 @@ var BodyPart = (function () {
 			this.children[childName] = child;
 		}
 	}, {
+		key: 'getParentChain',
+		value: function getParentChain() {
+			var chain = [];
+			var currentPart = this;
+			while (currentPart = currentPart.getParent()) {
+				chain.unshift(currentPart);
+			}
+
+			return chain;
+		}
+	}, {
 		key: 'getParentChainAsString',
 		value: function getParentChainAsString() {
 			var stringParts = [];
@@ -403,33 +494,13 @@ var BodyPart = (function () {
 		key: 'calculateFrames',
 		value: function calculateFrames() {
 			for (var f = 0; f < this.duration; f++) {
-				var rotation = undefined;
-				var absolutePosition = undefined;
 
 				var localRotation = this.animationInfo.getInterpolatedLocalRotation(f);
 				var relativePosition = this.relativePosition;
 
-				var parentPart = this.getParent();
-				if (parentPart) {
-					var parentCalculatedFrames = parentPart.getCalculatedFrames();
-					rotation = localRotation + parentCalculatedFrames[f].rotation;
-					var angleRad = rotation * Math.PI / 180;
-
-					// TODO: implement real calculations here.
-					var parentPosition = parentCalculatedFrames[f].absolutePosition;
-					// let newX = Math.cos(angleRad) * (relativePosition[0] - parentPosition[0]) - Math.sin(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[0];
-					// let newY = Math.sin(angleRad) * (relativePosition[0] - parentPosition[0]) + Math.cos(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[1];
-					var newX = relativePosition[0] + parentPosition[0];
-					var newY = relativePosition[1] + parentPosition[1];
-					absolutePosition = [newX | 0, newY | 0];
-				} else {
-					rotation = localRotation;
-					absolutePosition = relativePosition;
-				}
-
 				this.calculatedFrames[f] = {
-					'absolutePosition': absolutePosition,
-					'rotation': rotation
+					'position': relativePosition,
+					'rotation': localRotation
 				};
 			}
 		}
@@ -437,7 +508,7 @@ var BodyPart = (function () {
 		key: 'getDrawInfoForFrame',
 		value: function getDrawInfoForFrame(frameId) {
 			return {
-				'absolutePosition': this.calculatedFrames.absolutePosition[frameId],
+				'position': this.calculatedFrames.position[frameId],
 				'rotation': this.calculatedFrames.rotation[frameId]
 			};
 		}

@@ -54,6 +54,16 @@ class BodyPart {
 		this.children[childName] = child;
 	}
 
+	getParentChain() {
+		let chain = [];
+		let currentPart = this;
+		while (currentPart = currentPart.getParent()) {
+			chain.unshift(currentPart);
+		}
+
+		return chain;
+	}
+
 	getParentChainAsString() {
 		let stringParts = [];
 		let currentPart = this;
@@ -79,41 +89,20 @@ class BodyPart {
 
 	calculateFrames() {
 		for(let f = 0; f < this.duration; f++) {
-			let	rotation;
-			let absolutePosition;
 
 			let localRotation = this.animationInfo.getInterpolatedLocalRotation(f);
 			let relativePosition = this.relativePosition;
 
-			let parentPart = this.getParent();
-			if (parentPart) {
-				let parentCalculatedFrames = parentPart.getCalculatedFrames();
-				rotation = localRotation + parentCalculatedFrames[f].rotation;
-				let angleRad = rotation * Math.PI / 180;
-
-				// TODO: implement real calculations here.
-				let parentPosition = parentCalculatedFrames[f].absolutePosition;
-				// let newX = Math.cos(angleRad) * (relativePosition[0] - parentPosition[0]) - Math.sin(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[0];
-				// let newY = Math.sin(angleRad) * (relativePosition[0] - parentPosition[0]) + Math.cos(angleRad) * (relativePosition[1] - parentPosition[1]) + parentPosition[1];
-				let newX = relativePosition[0] + parentPosition[0];
-				let newY = relativePosition[1] + parentPosition[1];
-				absolutePosition = [newX | 0, newY | 0];
-
-			} else {
-				rotation = localRotation;
-				absolutePosition = relativePosition;
-			}
-
 			this.calculatedFrames[f] = {
-				'absolutePosition': absolutePosition,
-				'rotation': rotation
+				'position': relativePosition,
+				'rotation': localRotation
 			};
 		}
 	}
 
 	getDrawInfoForFrame(frameId) {
 		return {
-			'absolutePosition': this.calculatedFrames.absolutePosition[frameId],
+			'position': this.calculatedFrames.position[frameId],
 			'rotation': this.calculatedFrames.rotation[frameId]
 		}
 	}

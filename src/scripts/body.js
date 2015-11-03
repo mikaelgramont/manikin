@@ -142,30 +142,98 @@ class Body {
 		return calculatedFrames;
 	}
 
+	instrumentContext(ctx) {
+		let _ctx = ctx;
+		ctx = {};
+		
+		Object.defineProperty(ctx, 'fillStyle', {
+			set: function(value) {
+				console.log(`ctx.fillStyle set to ${value}`);
+			 	_ctx.fillStyle = value;
+			}		  
+		});
+
+		console.log('ctx', ctx);
+		ctx.save = () => {
+			console.log('ctx.save');
+			_ctx.save();
+		}
+		ctx.restore = () => {
+			console.log('ctx.restore');
+			_ctx.restore();
+		}
+		ctx.translate = (...args) => {
+			console.log('ctx.translate', args);
+			_ctx.translate.apply(_ctx, args);
+		}
+		ctx.rotate = (...args) => {
+			console.log('ctx.rotate', args);
+			_ctx.rotate.apply(_ctx, args);
+		}
+		ctx.fillRect = (...args) => {
+			console.log('ctx.fillRect', args);
+			_ctx.fillRect.apply(_ctx, args);
+		}
+		return ctx;
+	}
+
 	renderFrame(frameId, ctx) {
+		ctx = this.instrumentContext(ctx);
+
 		ctx.save();
 		ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
-		let beforeFn = function(part) {
-			let frameInfo = part.getCalculatedFrames()[frameId];
-			ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
-			ctx.save();
-		}
-
-		let afterFn = function(part) {
-			ctx.restore();
-		}
-
 		this.forEachPart((part, name) => {
-			let frameInfo = part.getCalculatedFrames()[frameId];
-			ctx.save();
-			ctx.fillStyle = part.color;
-			ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
-			ctx.restore();
-		}, beforeFn, afterFn);
+			console.group(`looping on ${name}`);
+			let parentParts = part.getParentChain();
 
+			// Get us into a state where everything is local to 'part'.
+			parentParts.forEach((parentPart) => {
+				console.group(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
+				ctx.save();
+				let frameInfo = parentPart.getCalculatedFrames()[frameId];
+				ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
+				console.groupEnd();
+			});
+
+			ctx.save();
+			let frameInfo = part.getCalculatedFrames()[frameId];
+			// Need to translate again, to position ourselves over the center of rotation.
+			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+			ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+			ctx.fillStyle = part.color;
+			ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
+			ctx.restore();
+
+
+			// Go back to previous context.
+			parentParts.forEach(() => {
+				ctx.restore();
+			});
+			console.groupEnd();
+		});
+		
 		ctx.restore();
+
+		// let beforeFn = function(part) {
+		// 	let frameInfo = part.getCalculatedFrames()[frameId];
+		// 	ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+		// 	ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+		// 	ctx.save();
+		// }
+
+		// let afterFn = function(part) {
+		// 	ctx.restore();
+		// }
+
+		// this.forEachPart((part, name) => {
+		// 	let frameInfo = part.getCalculatedFrames()[frameId];
+		// 	ctx.save();
+		// 	ctx.fillStyle = part.color;
+		// 	ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
+		// 	ctx.restore();
+		// }, beforeFn, afterFn);
 	}
 }
 
