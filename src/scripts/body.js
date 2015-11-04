@@ -142,44 +142,11 @@ class Body {
 		return calculatedFrames;
 	}
 
-	instrumentContext(ctx) {
-		let _ctx = ctx;
-		ctx = {};
-		
-		Object.defineProperty(ctx, 'fillStyle', {
-			set: function(value) {
-				console.log(`ctx.fillStyle set to ${value}`);
-			 	_ctx.fillStyle = value;
-			}		  
-		});
-
-		console.log('ctx', ctx);
-		ctx.save = () => {
-			console.log('ctx.save');
-			_ctx.save();
-		}
-		ctx.restore = () => {
-			console.log('ctx.restore');
-			_ctx.restore();
-		}
-		ctx.translate = (...args) => {
-			console.log('ctx.translate', args);
-			_ctx.translate.apply(_ctx, args);
-		}
-		ctx.rotate = (...args) => {
-			console.log('ctx.rotate', args);
-			_ctx.rotate.apply(_ctx, args);
-		}
-		ctx.fillRect = (...args) => {
-			console.log('ctx.fillRect', args);
-			_ctx.fillRect.apply(_ctx, args);
-		}
-		return ctx;
+	renderFrame(frameId, ctx) {
+		ctx = this.instrumentContext(ctx);
 	}
 
 	renderFrame(frameId, ctx) {
-		ctx = this.instrumentContext(ctx);
-
 		ctx.save();
 		ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
