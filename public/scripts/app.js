@@ -36,7 +36,6 @@ module.exports = AnimationInfo;
 var Body = require('./body');
 var CanvasDebugger = require('./canvasdebugger');
 
-var appConfig = window.appConfig;
 var ctx = document.getElementById('manikin').getContext('2d');
 
 var manikin = new Body(appConfig.bodyName, [300, 300]);
@@ -57,9 +56,16 @@ for (var i = 200; i <= 400; i += 10) {
 }
 
 ctx = CanvasDebugger.instrumentContext(ctx);
-setTimeout(function () {
+function render() {
 	manikin.renderFrame(0, ctx);
-}, 2000);
+}
+
+render();
+Object.observe(appConfig, function (changes) {
+	manikin.loadAnimation(appConfig.animation);
+	console.log(changes);
+	render();
+});
 
 // manikin.forEachPart((part, name) => {
 // 	console.log(`Part '${name}'`, part, part.getFrameInfo());
@@ -142,10 +148,10 @@ var Body = (function () {
 	_createClass(Body, [{
 		key: 'createParts',
 		value: function createParts() {
-			var hips = new BodyPart('hips', [20, 20], [0, 0], [0, 0], '#ff0000');
+			var hips = new BodyPart('hips', [20, 20], [0, 0], [10, 0], '#ff0000');
 			this.root.addChild(hips);
 
-			var torso = new BodyPart('torso', [20, 60], [0, -60], [0, 0], '#00ff00');
+			var torso = new BodyPart('torso', [20, 60], [0, -60], [10, 0], '#00ff00');
 			hips.addChild(torso);
 
 			// let neck = new BodyPart('neck');
@@ -154,10 +160,10 @@ var Body = (function () {
 			// let head = new BodyPart('head');
 			// neck.addChild(head);
 
-			var leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [0, 0], '#0000ff');
+			var leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [5, 0], '#0000ff');
 			torso.addChild(leftArm);
 
-			var leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [0, 0], '#ffff00');
+			var leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [5, 35], '#ffff00');
 			leftArm.addChild(leftForeArm);
 
 			// let leftHand = new BodyPart('hand-left');
@@ -172,7 +178,7 @@ var Body = (function () {
 			// let rightHand = new BodyPart('hand-right');
 			// rightForeArm.addChild(rightHand);
 
-			var leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [0, 0], '#ff00ff');
+			var leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [10, 20], '#ff00ff');
 			hips.addChild(leftThigh);
 
 			// let leftLeg = new BodyPart('leg-left');
@@ -287,19 +293,23 @@ var Body = (function () {
 
 				// Get us into a state where everything is local to 'part'.
 				parentParts.forEach(function (parentPart) {
-					console.group('loop for transforms to ' + name + ', parent: ' + parentPart.getName());
-					ctx.save();
 					var frameInfo = parentPart.getCalculatedFrames()[frameId];
+					console.group('loop for transforms to ' + name + ', parent: ' + parentPart.getName());
+
+					ctx.save();
+					ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
 					ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+					ctx.translate(-parentPart.centerOffset[0], -parentPart.centerOffset[1]);
 					ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 					console.groupEnd();
 				});
 
-				ctx.save();
 				var frameInfo = part.getCalculatedFrames()[frameId];
-				// Need to translate again, to position ourselves over the center of rotation.
-				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+
+				ctx.save();
 				ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+				ctx.translate(-part.centerOffset[0], -part.centerOffset[1]);
 				ctx.fillStyle = part.color;
 				ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
 				ctx.restore();
@@ -493,19 +503,28 @@ var CanvasDebugger = {
 			Object.defineProperty(ctx, propName, {
 				set: function set(value) {
 					_ctx[propName] = value;
-					console.log('ctx.' + propName + ' set to ' + value);
+					console.log('ctx.' + propName + ' = ' + value);
 				}
 			});
 		});
 
 		var fnWhitelist = ['save', 'restore', 'translate', 'rotate', 'fillRect'];
+		var argLoggingModifiers = {
+			'rotate': function rotate(argsIn) {
+				return [argsIn[0] * 180 / Math.PI];
+			}
+		};
 		fnWhitelist.forEach(function (fnName) {
 			ctx[fnName] = function () {
 				for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
 					args[_key] = arguments[_key];
 				}
 
-				console.log('ctx.' + fnName, args);
+				var argsForLogging = args;
+				if (fnName in argLoggingModifiers) {
+					argsForLogging = argLoggingModifiers[fnName](args);
+				}
+				console.log('ctx.' + fnName, argsForLogging);
 				_ctx[fnName].apply(_ctx, args);
 			};
 		});

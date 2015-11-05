@@ -17,10 +17,10 @@ class Body {
 	}
 
 	createParts() {
-		let hips = new BodyPart('hips', [20, 20], [0, 0], [0, 0], '#ff0000');
+		let hips = new BodyPart('hips', [20, 20], [0, 0], [10, 0], '#ff0000');
 		this.root.addChild(hips);
 
-		let torso = new BodyPart('torso', [20, 60], [0, -60], [0, 0], '#00ff00');
+		let torso = new BodyPart('torso', [20, 60], [0, -60], [10, 0], '#00ff00');
 		hips.addChild(torso);
 
 		// let neck = new BodyPart('neck');
@@ -30,10 +30,10 @@ class Body {
 		// neck.addChild(head);
 
 
-		let leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [0, 0], '#0000ff');
+		let leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [5, 0], '#0000ff');
 		torso.addChild(leftArm);
 
-		let leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [0, 0], '#ffff00');
+		let leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [5, 35], '#ffff00');
 		leftArm.addChild(leftForeArm);
 
 		// let leftHand = new BodyPart('hand-left');
@@ -50,7 +50,7 @@ class Body {
 		// rightForeArm.addChild(rightHand);
 
 
-		let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [0, 0], '#ff00ff');
+		let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [10, 20], '#ff00ff');
 		hips.addChild(leftThigh);
 
 		// let leftLeg = new BodyPart('leg-left');
@@ -156,19 +156,23 @@ class Body {
 
 			// Get us into a state where everything is local to 'part'.
 			parentParts.forEach((parentPart) => {
-				console.group(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
-				ctx.save();
 				let frameInfo = parentPart.getCalculatedFrames()[frameId];
+				console.group(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
+
+				ctx.save();
+				ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
 				ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+				ctx.translate(- parentPart.centerOffset[0], - parentPart.centerOffset[1]);
 				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 				console.groupEnd();
 			});
 
-			ctx.save();
 			let frameInfo = part.getCalculatedFrames()[frameId];
-			// Need to translate again, to position ourselves over the center of rotation.
-			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+
+			ctx.save();
 			ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+			ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
 			ctx.fillStyle = part.color;
 			ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
 			ctx.restore();

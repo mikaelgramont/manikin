@@ -17,10 +17,19 @@ let CanvasDebugger = {
 
 		let fnWhitelist = [
 			'save', 'restore', 'translate',	'rotate', 'fillRect'];
+		let argLoggingModifiers = {
+			'rotate': (argsIn) => {
+				return [argsIn[0] * 180 / Math.PI]
+			}
+		};
 		fnWhitelist.forEach((fnName) => {
 			ctx[fnName] = (...args) => {
-			  console.log('ctx.' + fnName, args);  
-			  _ctx[fnName].apply(_ctx, args);
+				let argsForLogging = args;
+				if (fnName in argLoggingModifiers) {
+					argsForLogging = argLoggingModifiers[fnName](args);
+				}
+				console.log('ctx.' + fnName, argsForLogging);  
+				_ctx[fnName].apply(_ctx, args);
 			};
 		});
 		return ctx;

@@ -1,7 +1,6 @@
 let Body = require('./body');
 let CanvasDebugger = require('./canvasdebugger');
 
-let appConfig = window.appConfig;
 let ctx = document.getElementById('manikin').getContext('2d');
 
 let manikin = new Body(appConfig.bodyName, [300, 300]);
@@ -22,9 +21,17 @@ for (let i = 200; i <= 400; i+=10) {
 }
 
 ctx = CanvasDebugger.instrumentContext(ctx);
-setTimeout(() => {
-	manikin.renderFrame(0, ctx);
-}, 2000);
+function render() {
+	manikin.renderFrame(0, ctx);	
+}
+
+render();
+Object.observe(appConfig, (changes) => {
+	manikin.loadAnimation(appConfig.animation);
+	console.log(changes);
+	render();
+});
+
 
 // manikin.forEachPart((part, name) => {
 // 	console.log(`Part '${name}'`, part, part.getFrameInfo());
