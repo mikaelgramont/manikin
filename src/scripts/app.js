@@ -3,34 +3,52 @@ let CanvasDebugger = require('./canvasdebugger');
 
 let ctx = document.getElementById('manikin').getContext('2d');
 
-let manikin = new Body(appConfig.bodyName, [300, 300]);
-manikin.loadAnimation(appConfig.animation);
-manikin.calculateFrames();
+let manikin = new Body(window.appConfig.bodyName, [300, 300]);
 
-ctx.beginPath();
-for (let i = 200; i <= 400; i+=10) {
-	ctx.beginPath();
-	ctx.moveTo(200, i);
-	ctx.lineTo(400,i);
-	ctx.stroke();
-
-	ctx.beginPath();
-	ctx.moveTo(i, 200);
-	ctx.lineTo(i, 400);
-	ctx.stroke();
-}
 
 ctx = CanvasDebugger.instrumentContext(ctx);
 function render() {
+	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	console.group('Drawing grid');
+	ctx.beginPath();
+	for (let i = 200; i <= 400; i+=10) {
+		ctx.beginPath();
+		ctx.moveTo(200, i);
+		ctx.lineTo(400,i);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.moveTo(i, 200);
+		ctx.lineTo(i, 400);
+		ctx.stroke();
+	}
+	console.groupEnd('Drawing grid');
+
+	manikin.loadAnimation(window.appConfig.animation);
+	manikin.calculateFrames();
 	manikin.renderFrame(0, ctx);	
 }
 
 render();
-Object.observe(appConfig, (changes) => {
-	manikin.loadAnimation(appConfig.animation);
-	console.log(changes);
-	render();
-});
+
+function observeNested(obj, callback) {
+	for(let prop in obj) {
+		if (!obj.hasOwnProperty(prop)) {
+			continue;
+		}
+		if (obj[prop] === null) {
+			continue;
+		}
+		if (typeof obj[prop] === 'object') {
+		    Object.observe(obj[prop], function(changes){
+		        callback();
+		    });
+			observeNested(obj[prop], callback);
+		}
+	}
+}
+
+observeNested(window.appConfig, render);
 
 
 // manikin.forEachPart((part, name) => {

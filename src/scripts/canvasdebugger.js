@@ -3,7 +3,7 @@ let CanvasDebugger = {
 		// Substitute the original object with our proxy,
 		// We'll return the proxy at the end of the function.
 		let _ctx = ctx;
-		ctx = {};
+		ctx = {_rawContext: _ctx, canvas: _ctx.canvas};
 		
 		let propWhitelist = ['fillStyle'];
 		propWhitelist.forEach((propName) => {
@@ -16,7 +16,8 @@ let CanvasDebugger = {
 		});
 
 		let fnWhitelist = [
-			'save', 'restore', 'translate',	'rotate', 'fillRect'];
+			'save', 'restore', 'translate',	'rotate', 'fillRect', 'clearRect', 'beginPath',
+			'moveTo', 'lineTo', 'stroke'];
 		let argLoggingModifiers = {
 			'rotate': (argsIn) => {
 				return [argsIn[0] * 180 / Math.PI]

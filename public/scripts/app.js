@@ -38,34 +38,51 @@ var CanvasDebugger = require('./canvasdebugger');
 
 var ctx = document.getElementById('manikin').getContext('2d');
 
-var manikin = new Body(appConfig.bodyName, [300, 300]);
-manikin.loadAnimation(appConfig.animation);
-manikin.calculateFrames();
-
-ctx.beginPath();
-for (var i = 200; i <= 400; i += 10) {
-	ctx.beginPath();
-	ctx.moveTo(200, i);
-	ctx.lineTo(400, i);
-	ctx.stroke();
-
-	ctx.beginPath();
-	ctx.moveTo(i, 200);
-	ctx.lineTo(i, 400);
-	ctx.stroke();
-}
+var manikin = new Body(window.appConfig.bodyName, [300, 300]);
 
 ctx = CanvasDebugger.instrumentContext(ctx);
 function render() {
+	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	console.group('Drawing grid');
+	ctx.beginPath();
+	for (var i = 200; i <= 400; i += 10) {
+		ctx.beginPath();
+		ctx.moveTo(200, i);
+		ctx.lineTo(400, i);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.moveTo(i, 200);
+		ctx.lineTo(i, 400);
+		ctx.stroke();
+	}
+	console.groupEnd('Drawing grid');
+
+	manikin.loadAnimation(window.appConfig.animation);
+	manikin.calculateFrames();
 	manikin.renderFrame(0, ctx);
 }
 
 render();
-Object.observe(appConfig, function (changes) {
-	manikin.loadAnimation(appConfig.animation);
-	console.log(changes);
-	render();
-});
+
+function observeNested(obj, callback) {
+	for (var prop in obj) {
+		if (!obj.hasOwnProperty(prop)) {
+			continue;
+		}
+		if (obj[prop] === null) {
+			continue;
+		}
+		if (typeof obj[prop] === 'object') {
+			Object.observe(obj[prop], function (changes) {
+				callback();
+			});
+			observeNested(obj[prop], callback);
+		}
+	}
+}
+
+observeNested(window.appConfig, render);
 
 // manikin.forEachPart((part, name) => {
 // 	console.log(`Part '${name}'`, part, part.getFrameInfo());
@@ -496,7 +513,7 @@ var CanvasDebugger = {
 		// Substitute the original object with our proxy,
 		// We'll return the proxy at the end of the function.
 		var _ctx = ctx;
-		ctx = {};
+		ctx = { _rawContext: _ctx, canvas: _ctx.canvas };
 
 		var propWhitelist = ['fillStyle'];
 		propWhitelist.forEach(function (propName) {
@@ -508,7 +525,7 @@ var CanvasDebugger = {
 			});
 		});
 
-		var fnWhitelist = ['save', 'restore', 'translate', 'rotate', 'fillRect'];
+		var fnWhitelist = ['save', 'restore', 'translate', 'rotate', 'fillRect', 'clearRect', 'beginPath', 'moveTo', 'lineTo', 'stroke'];
 		var argLoggingModifiers = {
 			'rotate': function rotate(argsIn) {
 				return [argsIn[0] * 180 / Math.PI];
