@@ -470,8 +470,10 @@ var BodyPart = (function () {
 			parentParts.forEach(function (parentPart) {
 				_this2.logger.groupCollapsed('positioning canvas according to ' + parentPart.getName());
 				var frameInfo = parentPart.getCalculatedFrames()[frameId];
-				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 				ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
+				ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
+				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+				ctx.translate(-parentPart.centerOffset[0], -parentPart.centerOffset[1]);
 				_this2.logger.groupEnd();
 			});
 		}

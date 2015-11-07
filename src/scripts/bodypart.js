@@ -126,8 +126,10 @@ class BodyPart {
 		parentParts.forEach((parentPart) => {
 			this.logger.groupCollapsed(`positioning canvas according to ${parentPart.getName()}`);
 			let frameInfo = parentPart.getCalculatedFrames()[frameId];
-			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 			ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
+			ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
+			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+			ctx.translate(- parentPart.centerOffset[0], - parentPart.centerOffset[1]);
 			this.logger.groupEnd();
 		});
 	}
