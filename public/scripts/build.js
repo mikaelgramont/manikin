@@ -34,26 +34,18 @@ module.exports = AnimationInfo;
 'use strict';
 
 var Body = require('./body');
-var ProxyDebugger = require('./proxydebugger');
+var CanvasDebugger = require('./canvasdebugger');
 
 var ctx = document.getElementById('manikin').getContext('2d');
 
 var manikin = new Body(window.appConfig.bodyName, [300, 300]);
 
-ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', console, {
-	'rotate': function rotate(argsIn) {
-		return [argsIn[0] * 180 / Math.PI];
-	}
-});
+ctx = CanvasDebugger.instrumentContext(ctx);
 function render() {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	console.groupCollapsed('Drawing grid');
+	console.group('Drawing grid');
+	ctx.beginPath();
 	for (var i = 200; i <= 400; i += 10) {
-		var strokeStyle = '#000000';
-		if (i == 300) {
-			strokeStyle = '#ff0000';
-		}
-		ctx.strokeStyle = strokeStyle;
 		ctx.beginPath();
 		ctx.moveTo(200, i);
 		ctx.lineTo(400, i);
@@ -71,7 +63,7 @@ function render() {
 	manikin.renderFrame(0, ctx);
 }
 
-window.render = render;
+render();
 
 function observeNested(obj, callback) {
 	for (var prop in obj) {
@@ -143,7 +135,7 @@ observeNested(window.appConfig, render);
 // }
 // console.log('Done testing');
 
-},{"./body":3,"./proxydebugger":5}],3:[function(require,module,exports){
+},{"./body":3,"./canvasdebugger":5}],3:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -173,10 +165,10 @@ var Body = (function () {
 	_createClass(Body, [{
 		key: 'createParts',
 		value: function createParts() {
-			var hips = new BodyPart('hips', [20, 14], [0, 0], [10, 7], '#ff4040', './images/hips.png');
+			var hips = new BodyPart('hips', [20, 20], [0, 0], [10, 0], '#ff4040');
 			this.root.addChild(hips);
 
-			var torso = new BodyPart('torso', [21, 39], [0, -39], [10, 0], '#40ff40', './images/torso.png');
+			var torso = new BodyPart('torso', [20, 60], [0, -60], [10, 0], '#40ff40');
 			hips.addChild(torso);
 
 			// let neck = new BodyPart('neck');
@@ -185,10 +177,10 @@ var Body = (function () {
 			// let head = new BodyPart('head');
 			// neck.addChild(head);
 
-			// let leftArm = new BodyPart('arm-left', [11, 24], [5, 0], [11, 24], '#4040ff', './images/arm-left.png');
-			// torso.addChild(leftArm);
+			var leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [5, 0], '#4040ff');
+			torso.addChild(leftArm);
 
-			// let leftForeArm = new BodyPart('forearm-left', [11, 22], [0, 35], [5, 35], '#ffff40', './images/forearm-left.png');
+			// let leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [5, 35], '#ffff40');
 			// leftArm.addChild(leftForeArm);
 
 			// let leftHand = new BodyPart('hand-left');
@@ -319,13 +311,13 @@ var Body = (function () {
 				// Get us into a state where everything is local to 'part'.
 				parentParts.forEach(function (parentPart) {
 					var frameInfo = parentPart.getCalculatedFrames()[frameId];
-					console.groupCollapsed('loop for transforms to ' + name + ', parent: ' + parentPart.getName());
+					console.group('loop for transforms to ' + name + ', parent: ' + parentPart.getName());
 
 					ctx.save();
-					// ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
-					ctx.translate(frameInfo.position[0], frameInfo.position[1]);
+					ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
 					ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 					ctx.translate(-parentPart.centerOffset[0], -parentPart.centerOffset[1]);
+					ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 					console.groupEnd();
 				});
 
@@ -333,23 +325,17 @@ var Body = (function () {
 
 				ctx.save();
 				ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
-
 				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
-				ctx.translate(-part.centerOffset[0], -part.centerOffset[1]);
 
 				// Intead of these three instructions, render a sprite.
-				if (part.sprite) {
-					ctx.translate(-part.centerOffset[0], -part.centerOffset[1]);
-					ctx.drawImage(part.sprite, 0, 0);
-				}
-				// ctx.fillStyle = part.color;
-				// ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
+				ctx.translate(-part.centerOffset[0], -part.centerOffset[1]);
+				ctx.fillStyle = part.color;
+				ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
 
 				// Just rendering a point on the center.
-				// ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-				// ctx.fillStyle = '#000000';
-				// ctx.fillRect(0, 0, 1, 1);
+				ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+				ctx.fillStyle = '#000000';
+				ctx.fillRect(0, 0, 1, 1);
 
 				ctx.restore();
 
@@ -398,7 +384,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
-	function BodyPart(name, size, relativePosition, centerOffset, color, sprite) {
+	function BodyPart(name, size, relativePosition, centerOffset, color) {
 		_classCallCheck(this, BodyPart);
 
 		this.name = name;
@@ -412,18 +398,6 @@ var BodyPart = (function () {
 		this.centerOffset = centerOffset;
 
 		this.color = color;
-
-		if (sprite) {
-			var img = document.createElement('img');
-			img.src = sprite;
-			img.addEventListener('load', function (e) {
-				console.log('image loaded', e);
-			});
-			document.getElementById('images').appendChild(img);
-			this.sprite = img;
-		} else {
-			this.sprite = null;
-		}
 
 		this.parent = null;
 		this.children = {};
@@ -540,50 +514,50 @@ var BodyPart = (function () {
 module.exports = BodyPart;
 
 },{"./animationInfo":1}],5:[function(require,module,exports){
-"use strict";
+'use strict';
 
-var ProxyDebugger = {
-	instrumentContext: function instrumentContext(original, logName, logger, modifiers) {
-		// The object that all calls will go through
-		var proxyObj = {};
+var CanvasDebugger = {
+	instrumentContext: function instrumentContext(ctx) {
+		// Substitute the original object with our proxy,
+		// We'll return the proxy at the end of the function.
+		var _ctx = ctx;
+		ctx = { _rawContext: _ctx, canvas: _ctx.canvas };
 
-		var _loop = function (propName) {
-			if (original[propName] instanceof Function) {
-				// Proxying methods.
-				proxyObj[propName] = function () {
-					for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-						args[_key] = arguments[_key];
-					}
+		var propWhitelist = ['fillStyle'];
+		propWhitelist.forEach(function (propName) {
+			Object.defineProperty(ctx, propName, {
+				set: function set(value) {
+					_ctx[propName] = value;
+					console.log('ctx.' + propName + ' = ' + value);
+				}
+			});
+		});
 
-					var argsForLogging = args;
-					if (propName in modifiers) {
-						argsForLogging = modifiers[propName](args);
-					}
-					logger.log(logName + "." + propName + " called with:", argsForLogging);
-					original[propName].apply(original, args);
-				};
-			} else {
-				// Setters and getters for proxy'ed properties.
-				Object.defineProperty(proxyObj, propName, {
-					set: function set(value) {
-						original[propName] = value;
-						logger.log(logName + "." + propName + " = " + value);
-					},
-					get: function get(name) {
-						return original[propName];
-					}
-				});
+		var fnWhitelist = ['save', 'restore', 'translate', 'rotate', 'fillRect', 'clearRect', 'beginPath', 'moveTo', 'lineTo', 'stroke'];
+		var argLoggingModifiers = {
+			'rotate': function rotate(argsIn) {
+				return [argsIn[0] * 180 / Math.PI];
 			}
 		};
+		fnWhitelist.forEach(function (fnName) {
+			ctx[fnName] = function () {
+				for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+					args[_key] = arguments[_key];
+				}
 
-		for (var propName in original) {
-			_loop(propName);
-		}
-		return proxyObj;
+				var argsForLogging = args;
+				if (fnName in argLoggingModifiers) {
+					argsForLogging = argLoggingModifiers[fnName](args);
+				}
+				console.log('ctx.' + fnName, argsForLogging);
+				_ctx[fnName].apply(_ctx, args);
+			};
+		});
+		return ctx;
 	}
 };
 
-module.exports = ProxyDebugger;
+module.exports = CanvasDebugger;
 
 },{}],6:[function(require,module,exports){
 "use strict";
@@ -677,4 +651,5 @@ module.exports = Stack;
 
 },{}]},{},[2])
 
-//# sourceMappingURL=app.js.map
+
+//# sourceMappingURL=build.js.map

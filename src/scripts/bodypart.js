@@ -1,7 +1,7 @@
 let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
-	constructor(name, size, relativePosition, centerOffset, color) {
+	constructor(name, size, relativePosition, centerOffset, color, sprite) {
 		this.name = name;
 		// Dimensions of the body part.
 		this.size = size;
@@ -14,6 +14,18 @@ class BodyPart {
 
 		this.color = color;
 		
+		if (sprite) {
+			let img = document.createElement('img');
+			img.src = sprite;
+			img.addEventListener('load', (e) => {
+				console.log('image loaded', e);
+			})
+			document.getElementById('images').appendChild(img);
+			this.sprite = img;		
+		} else {
+			this.sprite = null;
+		}
+
 		this.parent = null;
 		this.children = {};
 		

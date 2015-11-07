@@ -17,10 +17,10 @@ class Body {
 	}
 
 	createParts() {
-		let hips = new BodyPart('hips', [20, 20], [0, 0], [10, 0], '#ff0000');
+		let hips = new BodyPart('hips', [20, 14], [0, 0], [10, 7], '#ff4040', './images/hips.png');
 		this.root.addChild(hips);
 
-		let torso = new BodyPart('torso', [20, 60], [0, -60], [10, 0], '#00ff00');
+		let torso = new BodyPart('torso', [21, 39], [0, -39], [10, 0], '#40ff40', './images/torso.png');
 		hips.addChild(torso);
 
 		// let neck = new BodyPart('neck');
@@ -30,11 +30,11 @@ class Body {
 		// neck.addChild(head);
 
 
-		let leftArm = new BodyPart('arm-left', [10, 35], [5, 0], [5, 0], '#0000ff');
-		torso.addChild(leftArm);
+		// let leftArm = new BodyPart('arm-left', [11, 24], [5, 0], [11, 24], '#4040ff', './images/arm-left.png');
+		// torso.addChild(leftArm);
 
-		let leftForeArm = new BodyPart('forearm-left', [10, 35], [0, 35], [5, 35], '#ffff00');
-		leftArm.addChild(leftForeArm);
+		// let leftForeArm = new BodyPart('forearm-left', [11, 22], [0, 35], [5, 35], '#ffff40', './images/forearm-left.png');
+		// leftArm.addChild(leftForeArm);
 
 		// let leftHand = new BodyPart('hand-left');
 		// leftForeArm.addChild(leftHand);
@@ -50,8 +50,8 @@ class Body {
 		// rightForeArm.addChild(rightHand);
 
 
-		let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [10, 20], '#ff00ff');
-		hips.addChild(leftThigh);
+		// let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [10, 20], '#ff40ff');
+		// hips.addChild(leftThigh);
 
 		// let leftLeg = new BodyPart('leg-left');
 		// leftThigh.addChild(leftLeg);
@@ -157,13 +157,13 @@ class Body {
 			// Get us into a state where everything is local to 'part'.
 			parentParts.forEach((parentPart) => {
 				let frameInfo = parentPart.getCalculatedFrames()[frameId];
-				console.group(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
+				console.groupCollapsed(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
 
 				ctx.save();
-				ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
+				// ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
+				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 				ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 				ctx.translate(- parentPart.centerOffset[0], - parentPart.centerOffset[1]);
-				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 				console.groupEnd();
 			});
 
@@ -171,10 +171,24 @@ class Body {
 
 			ctx.save();
 			ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+			ctx.translate(frameInfo.position[0], frameInfo.position[1]);
+
 			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 			ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
-			ctx.fillStyle = part.color;
-			ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
+
+			// Intead of these three instructions, render a sprite.
+			if (part.sprite) {
+				ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
+				ctx.drawImage(part.sprite, 0, 0);
+			}
+			// ctx.fillStyle = part.color;
+			// ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
+
+			// Just rendering a point on the center.
+			// ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+			// ctx.fillStyle = '#000000';
+			// ctx.fillRect(0, 0, 1, 1);
+
 			ctx.restore();
 
 

@@ -1,17 +1,27 @@
 let Body = require('./body');
-let CanvasDebugger = require('./canvasdebugger');
+let ProxyDebugger = require('./proxydebugger');
 
 let ctx = document.getElementById('manikin').getContext('2d');
 
 let manikin = new Body(window.appConfig.bodyName, [300, 300]);
 
 
-ctx = CanvasDebugger.instrumentContext(ctx);
+
+ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', console, {
+	'rotate': (argsIn) => {
+		return [argsIn[0] * 180 / Math.PI]
+	}
+}
+);
 function render() {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	console.group('Drawing grid');
-	ctx.beginPath();
+	console.groupCollapsed('Drawing grid');
 	for (let i = 200; i <= 400; i+=10) {
+		let strokeStyle = '#000000';
+		if (i == 300) {
+			strokeStyle = '#ff0000';
+		}
+		ctx.strokeStyle = strokeStyle;
 		ctx.beginPath();
 		ctx.moveTo(200, i);
 		ctx.lineTo(400,i);
@@ -29,7 +39,7 @@ function render() {
 	manikin.renderFrame(0, ctx);	
 }
 
-render();
+window.render = render;
 
 function observeNested(obj, callback) {
 	for(let prop in obj) {
