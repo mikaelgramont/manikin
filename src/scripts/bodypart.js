@@ -1,7 +1,7 @@
 let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
-	constructor(name, relativePosition, centerOffset, sprite) {
+	constructor(name, relativePosition, centerOffset, sprite, logger) {
 		this.name = name;
 
 		// Vector going from parent to this part.
@@ -14,13 +14,15 @@ class BodyPart {
 			let img = document.createElement('img');
 			img.src = sprite;
 			img.addEventListener('load', (e) => {
-				console.log('image loaded', e);
+				this.logger.log('image loaded', e);
 			})
 			document.getElementById('images').appendChild(img);
 			this.sprite = img;		
 		} else {
 			this.sprite = null;
 		}
+
+		this.logger = logger;
 
 		this.parent = null;
 		this.children = {};
@@ -122,14 +124,12 @@ class BodyPart {
 	positionContextForFrame(frameId, ctx) {
 		let parentParts = this.getParentChain();
 		parentParts.forEach((parentPart) => {
-			console.groupCollapsed(`positioning canvas according to ${parentPart.getName()}`);
+			this.logger.groupCollapsed(`positioning canvas according to ${parentPart.getName()}`);
 			let frameInfo = parentPart.getCalculatedFrames()[frameId];
-			console.log()
 			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 			ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
-			console.groupEnd();
+			this.logger.groupEnd();
 		});
-		console.groupEnd();
 	}
 
 	/*

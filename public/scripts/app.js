@@ -36,18 +36,42 @@ module.exports = AnimationInfo;
 var Body = require('./body');
 var ProxyDebugger = require('./proxydebugger');
 
+var Logger = function Logger() {
+	this.enabled = true;
+};
+Logger.prototype.log = function () {
+	if (this.enabled) {
+		console.log.apply(console, arguments);
+	}
+};
+Logger.prototype.group = function () {
+	if (this.enabled) {
+		console.group.apply(console, arguments);
+	}
+};
+Logger.prototype.groupCollapsed = function () {
+	if (this.enabled) {
+		console.groupCollapsed.apply(console, arguments);
+	}
+};
+Logger.prototype.groupEnd = function () {
+	if (this.enabled) {
+		console.groupEnd.apply(console, arguments);
+	}
+};
+var logger = new Logger();
+var manikin = new Body(window.appConfig.bodyName, [300, 300], logger);
+
 var ctx = document.getElementById('manikin').getContext('2d');
-
-var manikin = new Body(window.appConfig.bodyName, [300, 300]);
-
-ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', console, {
+ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
 	'rotate': function rotate(argsIn) {
 		return [argsIn[0] * 180 / Math.PI];
 	}
 });
+
 function render() {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	console.groupCollapsed('Drawing grid');
+	logger.groupCollapsed('Drawing grid');
 	for (var i = 200; i <= 400; i += 10) {
 		var strokeStyle = '#000000';
 		if (i == 300) {
@@ -64,13 +88,14 @@ function render() {
 		ctx.lineTo(i, 400);
 		ctx.stroke();
 	}
-	console.groupEnd('Drawing grid');
+	logger.groupEnd('Drawing grid');
 
 	manikin.loadAnimation(window.appConfig.animation);
 	manikin.calculateFrames();
 	manikin.renderFrame(0, ctx);
 }
 
+window.logger = logger;
 window.render = render;
 window.manikin = manikin;
 
@@ -93,57 +118,6 @@ function observeNested(obj, callback) {
 
 observeNested(window.appConfig, render);
 
-// manikin.forEachPart((part, name) => {
-// 	console.log(`Part '${name}'`, part, part.getFrameInfo());
-// });
-
-// let calculatedFrames = manikin.getCalculatedFrames();
-// let expectedCalculatedFrames = {
-// 	'root': {
-// 		0: {
-// 			'rotation': 0
-// 		}
-// 	},
-// 	'hips': {
-// 		0: {
-// 			'rotation': 20
-// 		}
-// 	},
-// 	'torso': {
-// 		0: {
-// 			'rotation': 20
-// 		}
-// 	},	
-// 	'thigh-left': {
-// 		0: {
-// 			'rotation': -5
-// 		}
-// 	},
-// 	'arm-left': {
-// 		0: {
-// 			'rotation': 55
-// 		}
-// 	},
-// 	'forearm-left': {
-// 		0: {
-// 			'rotation': 100
-// 		}
-// 	},
-// };
-
-// for (let partName in expectedCalculatedFrames) {
-// 	let got = calculatedFrames[partName][0];
-// 	let expected = expectedCalculatedFrames[partName][0];
-
-// 	if (got.position[0] != expected.position[0] || got.position[1] != expected.position[1]) {
-// 		console.error(`Position for ${partName} does is incorrect.`, 'Got:', got.position, 'expected:', expected.position);
-// 	}
-// 	if (got.rotation != expected.rotation) {
-// 		console.error(`Rotation for ${partName} does is incorrect.`, 'Got:', got.rotation, 'expected:', expected.rotation);
-// 	}
-// }
-// console.log('Done testing');
-
 },{"./body":3,"./proxydebugger":5}],3:[function(require,module,exports){
 'use strict';
 
@@ -156,15 +130,14 @@ var Queue = require('./queue');
 var Stack = require('./stack');
 
 var Body = (function () {
-	function Body(name, absolutePosition) {
+	function Body(name, absolutePosition, logger) {
 		_classCallCheck(this, Body);
 
 		this.name = name;
 		this.absolutePosition = absolutePosition;
+		this.logger = logger;
 
-		// TODO: create a frame information object to pass around
-
-		this.root = new BodyPart('root', [0, 0], [0, 0]);
+		this.root = new BodyPart('root', [-10, 0], [0, 0], null, this.logger);
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -175,13 +148,13 @@ var Body = (function () {
 		key: 'createParts',
 		value: function createParts() {
 			// hips: 20x14
-			var hips = new BodyPart('hips', [0, 0], [10, 7], './images/hips.png');
+			var hips = new BodyPart('hips', [0, 0], [10, 7], './images/hips.png', this.logger);
 			this.root.addChild(hips);
 
 			// torso: 21x39
 			// [0, -39]: go up to the top left corner relative to the parent.
 			// Then move locally to the bottom center.
-			var torso = new BodyPart('torso', [0, -39], [10, 39], './images/torso.png');
+			var torso = new BodyPart('torso', [0, -39], [10, 39], './images/torso.png', this.logger);
 			hips.addChild(torso);
 
 			// let neck = new BodyPart('neck');
@@ -191,7 +164,7 @@ var Body = (function () {
 			// neck.addChild(head);
 
 			// left arm: 11x24
-			var leftArm = new BodyPart('arm-left', [5, 0], [6, 8], './images/arm-left.png');
+			var leftArm = new BodyPart('arm-left', [5, 0], [6, 8], './images/arm-left.png', this.logger);
 			torso.addChild(leftArm);
 
 			// left forearm: 11x22
@@ -316,84 +289,21 @@ var Body = (function () {
 	}, {
 		key: 'renderFrame',
 		value: function renderFrame(frameId, ctx) {
+			var _this2 = this;
+
 			ctx.save();
 			ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
 			this.forEachPart(function (part, name) {
-				console.groupCollapsed('rendering ' + name);
+				_this2.logger.groupCollapsed('rendering ' + name);
 				ctx.save();
 				part.positionContextForFrame(frameId, ctx);
 				part.drawSpriteForFrame(frameId, ctx);
 				ctx.restore();
-				console.groupEnd();
-
-				// console.group(`looping on ${name}`);
-				// let parentParts = part.getParentChain();
-
-				// // Get us into a state where everything is local to 'part'.
-				// parentParts.forEach((parentPart) => {
-				// 	let frameInfo = parentPart.getCalculatedFrames()[frameId];
-				// 	console.groupCollapsed(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
-
-				// 	ctx.save();
-				// 	// ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
-				// 	ctx.translate(frameInfo.position[0], frameInfo.position[1]);
-				// 	ctx.rotate((Math.PI / 180) * frameInfo.rotation);
-				// 	ctx.translate(- parentPart.centerOffset[0], - parentPart.centerOffset[1]);
-				// 	console.groupEnd();
-				// });
-
-				// let frameInfo = part.getCalculatedFrames()[frameId];
-
-				// ctx.save();
-				// ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-				// ctx.translate(frameInfo.position[0], frameInfo.position[1]);
-
-				// ctx.rotate((Math.PI / 180) * frameInfo.rotation);
-				// ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
-
-				// // Intead of these three instructions, render a sprite.
-				// if (part.sprite) {
-				// 	ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
-				// 	ctx.drawImage(part.sprite, 0, 0);
-				// }
-				// // ctx.fillStyle = part.color;
-				// // ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
-
-				// // Just rendering a point on the center.
-				// // ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-				// // ctx.fillStyle = '#000000';
-				// // ctx.fillRect(0, 0, 1, 1);
-
-				// ctx.restore();
-
-				// // Go back to previous context.
-				// parentParts.forEach(() => {
-				// 	ctx.restore();
-				// });
-				// console.groupEnd();
+				_this2.logger.groupEnd();
 			});
 
 			ctx.restore();
-
-			// let beforeFn = function(part) {
-			// 	let frameInfo = part.getCalculatedFrames()[frameId];
-			// 	ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-			// 	ctx.rotate((Math.PI / 180) * frameInfo.rotation);
-			// 	ctx.save();
-			// }
-
-			// let afterFn = function(part) {
-			// 	ctx.restore();
-			// }
-
-			// this.forEachPart((part, name) => {
-			// 	let frameInfo = part.getCalculatedFrames()[frameId];
-			// 	ctx.save();
-			// 	ctx.fillStyle = part.color;
-			// 	ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
-			// 	ctx.restore();
-			// }, beforeFn, afterFn);
 		}
 	}]);
 
@@ -412,7 +322,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
-	function BodyPart(name, relativePosition, centerOffset, sprite) {
+	function BodyPart(name, relativePosition, centerOffset, sprite, logger) {
+		var _this = this;
+
 		_classCallCheck(this, BodyPart);
 
 		this.name = name;
@@ -427,13 +339,15 @@ var BodyPart = (function () {
 			var img = document.createElement('img');
 			img.src = sprite;
 			img.addEventListener('load', function (e) {
-				console.log('image loaded', e);
+				_this.logger.log('image loaded', e);
 			});
 			document.getElementById('images').appendChild(img);
 			this.sprite = img;
 		} else {
 			this.sprite = null;
 		}
+
+		this.logger = logger;
 
 		this.parent = null;
 		this.children = {};
@@ -550,16 +464,16 @@ var BodyPart = (function () {
 	}, {
 		key: 'positionContextForFrame',
 		value: function positionContextForFrame(frameId, ctx) {
+			var _this2 = this;
+
 			var parentParts = this.getParentChain();
 			parentParts.forEach(function (parentPart) {
-				console.groupCollapsed('positioning canvas according to ' + parentPart.getName());
+				_this2.logger.groupCollapsed('positioning canvas according to ' + parentPart.getName());
 				var frameInfo = parentPart.getCalculatedFrames()[frameId];
-				console.log();
 				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 				ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
-				console.groupEnd();
+				_this2.logger.groupEnd();
 			});
-			console.groupEnd();
 		}
 
 		/*

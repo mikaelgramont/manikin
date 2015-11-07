@@ -3,13 +3,12 @@ let Queue = require('./queue');
 let Stack = require('./stack');
 
 class Body {
-	constructor(name, absolutePosition) {
+	constructor(name, absolutePosition, logger) {
 		this.name = name;
 		this.absolutePosition = absolutePosition;
+		this.logger = logger;
 
-		// TODO: create a frame information object to pass around
-
-		this.root = new BodyPart('root', [0, 0], [0, 0]);
+		this.root = new BodyPart('root', [-10, 0], [0, 0], null, this.logger);
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -18,13 +17,13 @@ class Body {
 
 	createParts() {
 		// hips: 20x14
-		let hips = new BodyPart('hips', [0, 0], [10, 7], './images/hips.png');
+		let hips = new BodyPart('hips', [0, 0], [10, 7], './images/hips.png', this.logger);
 		this.root.addChild(hips);
 
 		// torso: 21x39
 		// [0, -39]: go up to the top left corner relative to the parent.
 		// Then move locally to the bottom center.
-		let torso = new BodyPart('torso', [0, -39], [10, 39], './images/torso.png');
+		let torso = new BodyPart('torso', [0, -39], [10, 39], './images/torso.png', this.logger);
 		hips.addChild(torso);
 
 		// let neck = new BodyPart('neck');
@@ -34,7 +33,7 @@ class Body {
 		// neck.addChild(head);
 
 		// left arm: 11x24
-		let leftArm = new BodyPart('arm-left', [5, 0], [6, 8], './images/arm-left.png');
+		let leftArm = new BodyPart('arm-left', [5, 0], [6, 8], './images/arm-left.png', this.logger);
 		torso.addChild(leftArm);
 
 		// left forearm: 11x22
@@ -156,12 +155,12 @@ class Body {
 		ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
 		this.forEachPart((part, name) => {
-			console.groupCollapsed(`rendering ${name}`);
+			this.logger.groupCollapsed(`rendering ${name}`);
 			ctx.save();
 			part.positionContextForFrame(frameId, ctx);
 			part.drawSpriteForFrame(frameId, ctx);
 			ctx.restore();
-			console.groupEnd();
+			this.logger.groupEnd();
 
 		});
 		
