@@ -1,10 +1,8 @@
 let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
-	constructor(name, size, relativePosition, centerOffset, color, sprite) {
+	constructor(name, relativePosition, centerOffset, sprite) {
 		this.name = name;
-		// Dimensions of the body part.
-		this.size = size;
 
 		// Vector going from parent to this part.
 		this.relativePosition = relativePosition;
@@ -12,8 +10,6 @@ class BodyPart {
 		// Offset to allow parts to rotate around the joints.
 		this.centerOffset = centerOffset;
 
-		this.color = color;
-		
 		if (sprite) {
 			let img = document.createElement('img');
 			img.src = sprite;
@@ -117,6 +113,39 @@ class BodyPart {
 			'position': this.calculatedFrames.position[frameId],
 			'rotation': this.calculatedFrames.rotation[frameId]
 		}
+	}
+
+	/*
+	 * Starts from the root element, and positions the context
+	 * so that (0, 0) coincides with the origin of the current part.
+	 */
+	positionContextForFrame(frameId, ctx) {
+		let parentParts = this.getParentChain();
+		parentParts.forEach((parentPart) => {
+			console.groupCollapsed(`positioning canvas according to ${parentPart.getName()}`);
+			let frameInfo = parentPart.getCalculatedFrames()[frameId];
+			console.log()
+			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+			ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
+			console.groupEnd();
+		});
+		console.groupEnd();
+	}
+
+	/*
+	 * Draws the sprite for this part relative to the current
+	 * context origin.
+	 */
+	drawSpriteForFrame(frameId, ctx) {
+		if (!this.sprite) {
+			return;
+		}
+		let frameInfo = this.getCalculatedFrames()[frameId];
+		ctx.translate(this.relativePosition[0], this.relativePosition[1]);
+		ctx.translate(this.centerOffset[0], this.centerOffset[1]);
+		ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+		ctx.translate(- this.centerOffset[0], - this.centerOffset[1]);
+		ctx.drawImage(this.sprite, 0, 0);
 	}
 }
 module.exports = BodyPart;

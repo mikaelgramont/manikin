@@ -40,6 +40,7 @@ function render() {
 }
 
 window.render = render;
+window.manikin = manikin;
 
 function observeNested(obj, callback) {
 	for(let prop in obj) {

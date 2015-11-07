@@ -72,6 +72,7 @@ function render() {
 }
 
 window.render = render;
+window.manikin = manikin;
 
 function observeNested(obj, callback) {
 	for (var prop in obj) {
@@ -163,7 +164,7 @@ var Body = (function () {
 
 		// TODO: create a frame information object to pass around
 
-		this.root = new BodyPart('root', [0, 0], [0, 0], [0, 0], '#000000');
+		this.root = new BodyPart('root', [0, 0], [0, 0]);
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -173,10 +174,14 @@ var Body = (function () {
 	_createClass(Body, [{
 		key: 'createParts',
 		value: function createParts() {
-			var hips = new BodyPart('hips', [20, 14], [0, 0], [10, 7], '#ff4040', './images/hips.png');
+			// hips: 20x14
+			var hips = new BodyPart('hips', [0, 0], [10, 7], './images/hips.png');
 			this.root.addChild(hips);
 
-			var torso = new BodyPart('torso', [21, 39], [0, -39], [10, 0], '#40ff40', './images/torso.png');
+			// torso: 21x39
+			// [0, -39]: go up to the top left corner relative to the parent.
+			// Then move locally to the bottom center.
+			var torso = new BodyPart('torso', [0, -39], [10, 39], './images/torso.png');
 			hips.addChild(torso);
 
 			// let neck = new BodyPart('neck');
@@ -185,10 +190,12 @@ var Body = (function () {
 			// let head = new BodyPart('head');
 			// neck.addChild(head);
 
-			// let leftArm = new BodyPart('arm-left', [11, 24], [5, 0], [11, 24], '#4040ff', './images/arm-left.png');
-			// torso.addChild(leftArm);
+			// left arm: 11x24
+			var leftArm = new BodyPart('arm-left', [5, 0], [6, 8], './images/arm-left.png');
+			torso.addChild(leftArm);
 
-			// let leftForeArm = new BodyPart('forearm-left', [11, 22], [0, 35], [5, 35], '#ffff40', './images/forearm-left.png');
+			// left forearm: 11x22
+			// let leftForeArm = new BodyPart('forearm-left', [0, 35], [5, 35], '#ffff40', './images/forearm-left.png');
 			// leftArm.addChild(leftForeArm);
 
 			// let leftHand = new BodyPart('hand-left');
@@ -313,51 +320,58 @@ var Body = (function () {
 			ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
 			this.forEachPart(function (part, name) {
-				console.group('looping on ' + name);
-				var parentParts = part.getParentChain();
-
-				// Get us into a state where everything is local to 'part'.
-				parentParts.forEach(function (parentPart) {
-					var frameInfo = parentPart.getCalculatedFrames()[frameId];
-					console.groupCollapsed('loop for transforms to ' + name + ', parent: ' + parentPart.getName());
-
-					ctx.save();
-					// ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
-					ctx.translate(frameInfo.position[0], frameInfo.position[1]);
-					ctx.rotate(Math.PI / 180 * frameInfo.rotation);
-					ctx.translate(-parentPart.centerOffset[0], -parentPart.centerOffset[1]);
-					console.groupEnd();
-				});
-
-				var frameInfo = part.getCalculatedFrames()[frameId];
-
+				console.groupCollapsed('rendering ' + name);
 				ctx.save();
-				ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
-
-				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
-				ctx.translate(-part.centerOffset[0], -part.centerOffset[1]);
-
-				// Intead of these three instructions, render a sprite.
-				if (part.sprite) {
-					ctx.translate(-part.centerOffset[0], -part.centerOffset[1]);
-					ctx.drawImage(part.sprite, 0, 0);
-				}
-				// ctx.fillStyle = part.color;
-				// ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
-
-				// Just rendering a point on the center.
-				// ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-				// ctx.fillStyle = '#000000';
-				// ctx.fillRect(0, 0, 1, 1);
-
+				part.positionContextForFrame(frameId, ctx);
+				part.drawSpriteForFrame(frameId, ctx);
 				ctx.restore();
-
-				// Go back to previous context.
-				parentParts.forEach(function () {
-					ctx.restore();
-				});
 				console.groupEnd();
+
+				// console.group(`looping on ${name}`);
+				// let parentParts = part.getParentChain();
+
+				// // Get us into a state where everything is local to 'part'.
+				// parentParts.forEach((parentPart) => {
+				// 	let frameInfo = parentPart.getCalculatedFrames()[frameId];
+				// 	console.groupCollapsed(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
+
+				// 	ctx.save();
+				// 	// ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
+				// 	ctx.translate(frameInfo.position[0], frameInfo.position[1]);
+				// 	ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+				// 	ctx.translate(- parentPart.centerOffset[0], - parentPart.centerOffset[1]);
+				// 	console.groupEnd();
+				// });
+
+				// let frameInfo = part.getCalculatedFrames()[frameId];
+
+				// ctx.save();
+				// ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+				// ctx.translate(frameInfo.position[0], frameInfo.position[1]);
+
+				// ctx.rotate((Math.PI / 180) * frameInfo.rotation);
+				// ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
+
+				// // Intead of these three instructions, render a sprite.
+				// if (part.sprite) {
+				// 	ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
+				// 	ctx.drawImage(part.sprite, 0, 0);
+				// }
+				// // ctx.fillStyle = part.color;
+				// // ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
+
+				// // Just rendering a point on the center.
+				// // ctx.translate(part.centerOffset[0], part.centerOffset[1]);
+				// // ctx.fillStyle = '#000000';
+				// // ctx.fillRect(0, 0, 1, 1);
+
+				// ctx.restore();
+
+				// // Go back to previous context.
+				// parentParts.forEach(() => {
+				// 	ctx.restore();
+				// });
+				// console.groupEnd();
 			});
 
 			ctx.restore();
@@ -398,20 +412,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
-	function BodyPart(name, size, relativePosition, centerOffset, color, sprite) {
+	function BodyPart(name, relativePosition, centerOffset, sprite) {
 		_classCallCheck(this, BodyPart);
 
 		this.name = name;
-		// Dimensions of the body part.
-		this.size = size;
 
 		// Vector going from parent to this part.
 		this.relativePosition = relativePosition;
 
 		// Offset to allow parts to rotate around the joints.
 		this.centerOffset = centerOffset;
-
-		this.color = color;
 
 		if (sprite) {
 			var img = document.createElement('img');
@@ -532,6 +542,43 @@ var BodyPart = (function () {
 				'rotation': this.calculatedFrames.rotation[frameId]
 			};
 		}
+
+		/*
+   * Starts from the root element, and positions the context
+   * so that (0, 0) coincides with the origin of the current part.
+   */
+	}, {
+		key: 'positionContextForFrame',
+		value: function positionContextForFrame(frameId, ctx) {
+			var parentParts = this.getParentChain();
+			parentParts.forEach(function (parentPart) {
+				console.groupCollapsed('positioning canvas according to ' + parentPart.getName());
+				var frameInfo = parentPart.getCalculatedFrames()[frameId];
+				console.log();
+				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+				ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
+				console.groupEnd();
+			});
+			console.groupEnd();
+		}
+
+		/*
+   * Draws the sprite for this part relative to the current
+   * context origin.
+   */
+	}, {
+		key: 'drawSpriteForFrame',
+		value: function drawSpriteForFrame(frameId, ctx) {
+			if (!this.sprite) {
+				return;
+			}
+			var frameInfo = this.getCalculatedFrames()[frameId];
+			ctx.translate(this.relativePosition[0], this.relativePosition[1]);
+			ctx.translate(this.centerOffset[0], this.centerOffset[1]);
+			ctx.rotate(Math.PI / 180 * frameInfo.rotation);
+			ctx.translate(-this.centerOffset[0], -this.centerOffset[1]);
+			ctx.drawImage(this.sprite, 0, 0);
+		}
 	}]);
 
 	return BodyPart;
@@ -559,7 +606,7 @@ var ProxyDebugger = {
 					if (propName in modifiers) {
 						argsForLogging = modifiers[propName](args);
 					}
-					logger.log(logName + "." + propName + " called with:", argsForLogging);
+					logger.log(logName + "." + propName, argsForLogging);
 					original[propName].apply(original, args);
 				};
 			} else {

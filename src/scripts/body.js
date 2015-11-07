@@ -9,7 +9,7 @@ class Body {
 
 		// TODO: create a frame information object to pass around
 
-		this.root = new BodyPart('root', [0, 0], [0, 0], [0, 0], '#000000');
+		this.root = new BodyPart('root', [0, 0], [0, 0]);
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
@@ -17,10 +17,14 @@ class Body {
 	}
 
 	createParts() {
-		let hips = new BodyPart('hips', [20, 14], [0, 0], [10, 7], '#ff4040', './images/hips.png');
+		// hips: 20x14
+		let hips = new BodyPart('hips', [0, 0], [10, 7], './images/hips.png');
 		this.root.addChild(hips);
 
-		let torso = new BodyPart('torso', [21, 39], [0, -39], [10, 0], '#40ff40', './images/torso.png');
+		// torso: 21x39
+		// [0, -39]: go up to the top left corner relative to the parent.
+		// Then move locally to the bottom center.
+		let torso = new BodyPart('torso', [0, -39], [10, 39], './images/torso.png');
 		hips.addChild(torso);
 
 		// let neck = new BodyPart('neck');
@@ -29,11 +33,12 @@ class Body {
 		// let head = new BodyPart('head');
 		// neck.addChild(head);
 
+		// left arm: 11x24
+		let leftArm = new BodyPart('arm-left', [5, 0], [6, 8], './images/arm-left.png');
+		torso.addChild(leftArm);
 
-		// let leftArm = new BodyPart('arm-left', [11, 24], [5, 0], [11, 24], '#4040ff', './images/arm-left.png');
-		// torso.addChild(leftArm);
-
-		// let leftForeArm = new BodyPart('forearm-left', [11, 22], [0, 35], [5, 35], '#ffff40', './images/forearm-left.png');
+		// left forearm: 11x22
+		// let leftForeArm = new BodyPart('forearm-left', [0, 35], [5, 35], '#ffff40', './images/forearm-left.png');
 		// leftArm.addChild(leftForeArm);
 
 		// let leftHand = new BodyPart('hand-left');
@@ -151,74 +156,16 @@ class Body {
 		ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
 		this.forEachPart((part, name) => {
-			console.group(`looping on ${name}`);
-			let parentParts = part.getParentChain();
-
-			// Get us into a state where everything is local to 'part'.
-			parentParts.forEach((parentPart) => {
-				let frameInfo = parentPart.getCalculatedFrames()[frameId];
-				console.groupCollapsed(`loop for transforms to ${name}, parent: ${parentPart.getName()}`);
-
-				ctx.save();
-				// ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
-				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
-				ctx.rotate((Math.PI / 180) * frameInfo.rotation);
-				ctx.translate(- parentPart.centerOffset[0], - parentPart.centerOffset[1]);
-				console.groupEnd();
-			});
-
-			let frameInfo = part.getCalculatedFrames()[frameId];
-
+			console.groupCollapsed(`rendering ${name}`);
 			ctx.save();
-			ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-			ctx.translate(frameInfo.position[0], frameInfo.position[1]);
-
-			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
-			ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
-
-			// Intead of these three instructions, render a sprite.
-			if (part.sprite) {
-				ctx.translate(- part.centerOffset[0], - part.centerOffset[1]);
-				ctx.drawImage(part.sprite, 0, 0);
-			}
-			// ctx.fillStyle = part.color;
-			// ctx.fillRect(frameInfo.position[0], frameInfo.position[1], part.size[0], part.size[1]);
-
-			// Just rendering a point on the center.
-			// ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-			// ctx.fillStyle = '#000000';
-			// ctx.fillRect(0, 0, 1, 1);
-
+			part.positionContextForFrame(frameId, ctx);
+			part.drawSpriteForFrame(frameId, ctx);
 			ctx.restore();
-
-
-			// Go back to previous context.
-			parentParts.forEach(() => {
-				ctx.restore();
-			});
 			console.groupEnd();
+
 		});
 		
 		ctx.restore();
-
-		// let beforeFn = function(part) {
-		// 	let frameInfo = part.getCalculatedFrames()[frameId];
-		// 	ctx.translate(part.centerOffset[0], part.centerOffset[1]);
-		// 	ctx.rotate((Math.PI / 180) * frameInfo.rotation);
-		// 	ctx.save();
-		// }
-
-		// let afterFn = function(part) {
-		// 	ctx.restore();
-		// }
-
-		// this.forEachPart((part, name) => {
-		// 	let frameInfo = part.getCalculatedFrames()[frameId];
-		// 	ctx.save();
-		// 	ctx.fillStyle = part.color;
-		// 	ctx.fillRect(frameInfo.absolutePosition[0], frameInfo.absolutePosition[1], part.size[0], part.size[1]);
-		// 	ctx.restore();
-		// }, beforeFn, afterFn);
 	}
 }
 
