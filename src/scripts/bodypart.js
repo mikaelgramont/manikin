@@ -92,7 +92,7 @@ class BodyPart {
 
 	loadAnimationInfo(duration, animationInfo) {
 		this.duration = duration;
-		this.animationInfo = new AnimationInfo(animationInfo);
+		this.animationInfo = new AnimationInfo(animationInfo, duration);
 	}
 
 	getCalculatedFrame(frameId) {

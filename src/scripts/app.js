@@ -47,4 +47,19 @@ window.logger = logger;
 window.render = render;
 window.manikin = manikin;
 
+window.go = () => {
+	var i = 0;	
+	function anim(){
+		render(i);
+		i++;
+		if (i <= 30) {
+			rafId = requestAnimationFrame(anim);
+		} else {
+			cancelAnimationFrame(rafId);
+		}
+	}
+	var rafId = requestAnimationFrame(anim);
+	window.rafId = rafId;
+}
+
 drawGrid(gridCtx);

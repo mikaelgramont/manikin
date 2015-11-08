@@ -1,27 +1,43 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";
+'use strict';
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var AnimationInfo = (function () {
-	function AnimationInfo(animationInfo) {
+	function AnimationInfo(animationInfo, duration) {
 		_classCallCheck(this, AnimationInfo);
 
-		// this.source = animationInfo.source;
+		this.duration = duration;
 		this.rotation = animationInfo.rotation;
 	}
 
 	_createClass(AnimationInfo, [{
-		key: "getInterpolatedLocalRotation",
+		key: 'getInterpolatedLocalRotation',
 		value: function getInterpolatedLocalRotation(frameId) {
-			return this.rotation[frameId];
-		}
-	}, {
-		key: "getInterpolatedLocalPosition",
-		value: function getInterpolatedLocalPosition(frameId) {
-			return this.center;
+			if (frameId < 0) {
+				throw new Error("Negative frameId not allowed.");
+			}
+
+			var previousId = frameId;
+			var previousSpecFrame = this.rotation[previousId];
+
+			while (typeof previousSpecFrame == 'undefined' && previousId > 0) {
+				previousId--;
+				previousSpecFrame = this.rotation[previousId];
+			}
+
+			var nextId = frameId + 1;
+			var nextSpecFrame = this.rotation[nextId];
+			while (typeof nextSpecFrame == 'undefined' && nextId < this.duration - 1) {
+				nextId++;
+				nextSpecFrame = this.rotation[nextId];
+			}
+
+			var proportion = (frameId - previousId) / (nextId - previousId);
+
+			return this.rotation[previousId] + proportion * (this.rotation[nextId] - this.rotation[previousId]);
 		}
 	}]);
 
@@ -81,6 +97,21 @@ function render(frameId) {
 window.logger = logger;
 window.render = render;
 window.manikin = manikin;
+
+window.go = function () {
+	var i = 0;
+	function anim() {
+		render(i);
+		i++;
+		if (i <= 30) {
+			rafId = requestAnimationFrame(anim);
+		} else {
+			cancelAnimationFrame(rafId);
+		}
+	}
+	var rafId = requestAnimationFrame(anim);
+	window.rafId = rafId;
+};
 
 drawGrid(gridCtx);
 
@@ -364,7 +395,7 @@ var BodyPart = (function () {
 		key: 'loadAnimationInfo',
 		value: function loadAnimationInfo(duration, animationInfo) {
 			this.duration = duration;
-			this.animationInfo = new AnimationInfo(animationInfo);
+			this.animationInfo = new AnimationInfo(animationInfo, duration);
 		}
 	}, {
 		key: 'getCalculatedFrame',
