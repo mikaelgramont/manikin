@@ -1,25 +1,68 @@
 let BodyPart = require('./bodypart');
 let Stack = require('./stack');
 
+const ANIMATIONS_PATH = './animations';
+const BODIES_PATH = './bodies';
+
 class Body {
-	constructor(bodyConfig, absolutePosition, logger) {
-		this.name = bodyConfig.name;
+	constructor(bodyConfigFilename, animationConfigFilename, absolutePosition, logger) {
+
 		this.absolutePosition = absolutePosition;
-		this.bodyConfig = bodyConfig;
 		this.logger = logger;
 
 		this.root = null;
 		this.duration = null;
 		this.looping = null;
 
+		let promises = [];
+		promises.push(this.jsonLoadPromiseFactory(
+			`${BODIES_PATH}/${bodyConfigFilename}.json`, this.setBodyConfig));
+		promises.push(this.jsonLoadPromiseFactory(
+			`${ANIMATIONS_PATH}/${animationConfigFilename}.json`, this.setAnimationConfig));
+
+		Promise.all(promises).then(this.onReady.bind(this));
+	}
+
+	onReady() {
 		this.createParts();
+		this.loadAnimation();
+		this.calculateFrames();		
+	}
+
+	setBodyConfig(bodyConfig) {
+		this.bodyConfig = bodyConfig;
+		this.name = this.bodyConfig.name;
+	}
+
+	setAnimationConfig(animationConfig) {
+		this.animationConfig = animationConfig;
+	}
+
+	jsonLoadPromiseFactory(relativePath, onSuccess) {
+		let p = new Promise((resolve, reject) => {
+			let req = new XMLHttpRequest();
+    		req.open('GET', relativePath);
+			req.onload = () => {
+				if (req.status == 200) {
+					onSuccess.bind(this)(JSON.parse(req.response));
+					resolve();
+				} else {
+					reject(Error(req.statusText));
+				}
+			}.bind(this);
+			req.onerror = () => {
+				reject();
+			}.bind(this);
+			req.send();
+		}.bind(this));
+		return p;
 	}
 
 	createParts() {
 		let parts = {};
 		// Step 1: build all parts.
-		for (let partName in bodyConfig.parts) {
-			let partConfig = bodyConfig.parts[partName];
+		for (let partName in this.bodyConfig.parts) {
+			let partConfig = this.bodyConfig.parts[partName];
 			parts[partName] = new BodyPart(
 				partName,
 				partConfig.relativePosition,
@@ -38,7 +81,7 @@ class Body {
 			if (partName == 'root') {
 				continue;
 			}
-			let partConfig = bodyConfig.parts[partName];
+			let partConfig = this.bodyConfig.parts[partName];
 			let childPart = parts[partName];
 			let parentPart = parts[partConfig.parentName];
 
@@ -83,7 +126,8 @@ class Body {
 		storage.flush();
 	}
 
-	loadAnimation(animObject) {
+	loadAnimation() {
+		let animObject = this.animationConfig;
 		this.duration = animObject.duration;
 		this.looping = animObject.looping;
 

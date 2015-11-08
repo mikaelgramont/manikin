@@ -4,62 +4,62 @@ let ProxyDebugger = require('./proxydebugger');
 
 let logger = new Logger();
 logger.enabled = false;
-let manikin = new Body(window.bodyConfig, [300, 300], logger);
+let manikin = new Body('default', 'default', [100, 100], logger);
 
 let gridCtx = document.getElementById('grid').getContext('2d');
 let ctx = document.getElementById('manikin').getContext('2d');
-ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
-	'rotate': (argsIn) => {
-		return [argsIn[0] * 180 / Math.PI]
-	}
-});
+// ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
+// 	'rotate': (argsIn) => {
+// 		return [argsIn[0] * 180 / Math.PI]
+// 	}
+// });
 
 function drawGrid(ctx) {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	logger.groupCollapsed('Drawing grid');
-	for (let i = 200; i <= 400; i+=10) {
+	for (let i = 0; i <= 200; i += 10) {
 		let strokeStyle = '#000000';
-		if (i == 300) {
+		if (i == 100) {
 			strokeStyle = '#ff0000';
 		}
 		ctx.strokeStyle = strokeStyle;
 		ctx.beginPath();
-		ctx.moveTo(200, i);
-		ctx.lineTo(400,i);
+		ctx.moveTo(0, i);
+		ctx.lineTo(200,i);
 		ctx.stroke();
 
 		ctx.beginPath();
-		ctx.moveTo(i, 200);
-		ctx.lineTo(i, 400);
+		ctx.moveTo(i, 0);
+		ctx.lineTo(i, 200);
 		ctx.stroke();
 	}
 	logger.groupEnd('Drawing grid');
 }
 
 function render(frameId) {
+	console.log('rendering ' + frameId)
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	manikin.loadAnimation(window.animationConfig);
-	manikin.calculateFrames();
 	manikin.renderFrame(frameId || 0, ctx);	
+}
+
+window.go = () => {
+	var i = 0;	
+	var fps = 1;
+	function anim(){
+		render(i % 40);
+		i++;
+		if (i <= 400) {
+			handle = setTimeout(anim, 1 / fps * 1000);
+		} else {
+			clearTimeout(handle);
+		}
+	}
+	let handle = setTimeout(anim, 1 / fps * 1000);
+	window.handle = handle;
 }
 
 window.logger = logger;
 window.render = render;
 window.manikin = manikin;
-
-window.go = () => {
-	var i = 0;	
-	function anim(){
-		render(i);
-		i++;
-		if (i <= 30) {
-			rafId = requestAnimationFrame(anim);
-		} else {
-			cancelAnimationFrame(rafId);
-		}
-	}
-	var rafId = requestAnimationFrame(anim);
-	window.rafId = rafId;
-}
 
 drawGrid(gridCtx);

@@ -6,11 +6,12 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var AnimationInfo = (function () {
-	function AnimationInfo(animationInfo, duration) {
+	function AnimationInfo(animationInfo, duration, parentPart) {
 		_classCallCheck(this, AnimationInfo);
 
 		this.duration = duration;
 		this.rotation = animationInfo.rotation;
+		this.parentPart = parentPart;
 	}
 
 	_createClass(AnimationInfo, [{
@@ -20,24 +21,39 @@ var AnimationInfo = (function () {
 				throw new Error("Negative frameId not allowed.");
 			}
 
+			if (typeof this.rotation[frameId] !== 'undefined') {
+				return this.rotation[frameId];
+			}
+
+			// 1. Find the previous keyframe.
 			var previousId = frameId;
-			var previousSpecFrame = this.rotation[previousId];
-
-			while (typeof previousSpecFrame == 'undefined' && previousId > 0) {
+			var previousKeyFrameValue = this.rotation[previousId];
+			while (typeof previousKeyFrameValue == 'undefined' && previousId > 0) {
 				previousId--;
-				previousSpecFrame = this.rotation[previousId];
+				previousKeyFrameValue = this.rotation[previousId];
 			}
 
+			// 2. Find the next keyframe.
 			var nextId = frameId + 1;
-			var nextSpecFrame = this.rotation[nextId];
-			while (typeof nextSpecFrame == 'undefined' && nextId < this.duration - 1) {
+			var nextKeyFrameValue = this.rotation[nextId];
+			while (typeof nextKeyFrameValue == 'undefined') {
 				nextId++;
-				nextSpecFrame = this.rotation[nextId];
+
+				if (nextId >= this.duration - 1) {
+					nextId = 0;
+					break;
+				}
 			}
+			nextKeyFrameValue = this.rotation[nextId];
 
-			var proportion = (frameId - previousId) / (nextId - previousId);
-
-			return this.rotation[previousId] + proportion * (this.rotation[nextId] - this.rotation[previousId]);
+			// 3. Return the interpolated value.
+			var ratio = undefined;
+			if (nextId === 0) {
+				ratio = (frameId - previousId) / (this.duration - previousId);
+			} else {
+				ratio = (frameId - previousId) / (nextId - previousId);
+			}
+			return previousKeyFrameValue + ratio * (nextKeyFrameValue - previousKeyFrameValue);
 		}
 	}]);
 
@@ -55,63 +71,63 @@ var ProxyDebugger = require('./proxydebugger');
 
 var logger = new Logger();
 logger.enabled = false;
-var manikin = new Body(window.bodyConfig, [300, 300], logger);
+var manikin = new Body('default', 'default', [100, 100], logger);
 
 var gridCtx = document.getElementById('grid').getContext('2d');
 var ctx = document.getElementById('manikin').getContext('2d');
-ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
-	'rotate': function rotate(argsIn) {
-		return [argsIn[0] * 180 / Math.PI];
-	}
-});
+// ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
+// 	'rotate': (argsIn) => {
+// 		return [argsIn[0] * 180 / Math.PI]
+// 	}
+// });
 
 function drawGrid(ctx) {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	logger.groupCollapsed('Drawing grid');
-	for (var i = 200; i <= 400; i += 10) {
+	for (var i = 0; i <= 200; i += 10) {
 		var strokeStyle = '#000000';
-		if (i == 300) {
+		if (i == 100) {
 			strokeStyle = '#ff0000';
 		}
 		ctx.strokeStyle = strokeStyle;
 		ctx.beginPath();
-		ctx.moveTo(200, i);
-		ctx.lineTo(400, i);
+		ctx.moveTo(0, i);
+		ctx.lineTo(200, i);
 		ctx.stroke();
 
 		ctx.beginPath();
-		ctx.moveTo(i, 200);
-		ctx.lineTo(i, 400);
+		ctx.moveTo(i, 0);
+		ctx.lineTo(i, 200);
 		ctx.stroke();
 	}
 	logger.groupEnd('Drawing grid');
 }
 
 function render(frameId) {
+	console.log('rendering ' + frameId);
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	manikin.loadAnimation(window.animationConfig);
-	manikin.calculateFrames();
 	manikin.renderFrame(frameId || 0, ctx);
 }
+
+window.go = function () {
+	var i = 0;
+	var fps = 1;
+	function anim() {
+		render(i % 40);
+		i++;
+		if (i <= 400) {
+			handle = setTimeout(anim, 1 / fps * 1000);
+		} else {
+			clearTimeout(handle);
+		}
+	}
+	var handle = setTimeout(anim, 1 / fps * 1000);
+	window.handle = handle;
+};
 
 window.logger = logger;
 window.render = render;
 window.manikin = manikin;
-
-window.go = function () {
-	var i = 0;
-	function anim() {
-		render(i);
-		i++;
-		if (i <= 30) {
-			rafId = requestAnimationFrame(anim);
-		} else {
-			cancelAnimationFrame(rafId);
-		}
-	}
-	var rafId = requestAnimationFrame(anim);
-	window.rafId = rafId;
-};
 
 drawGrid(gridCtx);
 
@@ -125,29 +141,75 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var BodyPart = require('./bodypart');
 var Stack = require('./stack');
 
+var ANIMATIONS_PATH = './animations';
+var BODIES_PATH = './bodies';
+
 var Body = (function () {
-	function Body(bodyConfig, absolutePosition, logger) {
+	function Body(bodyConfigFilename, animationConfigFilename, absolutePosition, logger) {
 		_classCallCheck(this, Body);
 
-		this.name = bodyConfig.name;
 		this.absolutePosition = absolutePosition;
-		this.bodyConfig = bodyConfig;
 		this.logger = logger;
 
 		this.root = null;
 		this.duration = null;
 		this.looping = null;
 
-		this.createParts();
+		var promises = [];
+		promises.push(this.jsonLoadPromiseFactory(BODIES_PATH + '/' + bodyConfigFilename + '.json', this.setBodyConfig));
+		promises.push(this.jsonLoadPromiseFactory(ANIMATIONS_PATH + '/' + animationConfigFilename + '.json', this.setAnimationConfig));
+
+		Promise.all(promises).then(this.onReady.bind(this));
 	}
 
 	_createClass(Body, [{
+		key: 'onReady',
+		value: function onReady() {
+			this.createParts();
+			this.loadAnimation();
+			this.calculateFrames();
+		}
+	}, {
+		key: 'setBodyConfig',
+		value: function setBodyConfig(bodyConfig) {
+			this.bodyConfig = bodyConfig;
+			this.name = this.bodyConfig.name;
+		}
+	}, {
+		key: 'setAnimationConfig',
+		value: function setAnimationConfig(animationConfig) {
+			this.animationConfig = animationConfig;
+		}
+	}, {
+		key: 'jsonLoadPromiseFactory',
+		value: function jsonLoadPromiseFactory(relativePath, onSuccess) {
+			var _this = this;
+
+			var p = new Promise((function (resolve, reject) {
+				var req = new XMLHttpRequest();
+				req.open('GET', relativePath);
+				req.onload = (function () {
+					if (req.status == 200) {
+						onSuccess.bind(_this)(JSON.parse(req.response));
+						resolve();
+					} else {
+						reject(Error(req.statusText));
+					}
+				}).bind(_this);
+				req.onerror = (function () {
+					reject();
+				}).bind(_this);
+				req.send();
+			}).bind(this));
+			return p;
+		}
+	}, {
 		key: 'createParts',
 		value: function createParts() {
 			var parts = {};
 			// Step 1: build all parts.
-			for (var partName in bodyConfig.parts) {
-				var partConfig = bodyConfig.parts[partName];
+			for (var partName in this.bodyConfig.parts) {
+				var partConfig = this.bodyConfig.parts[partName];
 				parts[partName] = new BodyPart(partName, partConfig.relativePosition, partConfig.centerOffset, partConfig.sprite, partConfig.layer, this.logger);
 
 				if (partName == 'root') {
@@ -160,7 +222,7 @@ var Body = (function () {
 				if (partName == 'root') {
 					continue;
 				}
-				var partConfig = bodyConfig.parts[partName];
+				var partConfig = this.bodyConfig.parts[partName];
 				var childPart = parts[partName];
 				var parentPart = parts[partConfig.parentName];
 
@@ -206,9 +268,10 @@ var Body = (function () {
 		}
 	}, {
 		key: 'loadAnimation',
-		value: function loadAnimation(animObject) {
-			var _this = this;
+		value: function loadAnimation() {
+			var _this2 = this;
 
+			var animObject = this.animationConfig;
 			this.duration = animObject.duration;
 			this.looping = animObject.looping;
 
@@ -217,7 +280,7 @@ var Body = (function () {
 					//throw new Error(`No frame info for body part ${name} in animation object:`, animObject);
 					return;
 				}
-				part.loadAnimationInfo(_this.duration, animObject.frames[name]);
+				part.loadAnimationInfo(_this2.duration, animObject.frames[name]);
 			});
 		}
 	}, {
@@ -244,7 +307,7 @@ var Body = (function () {
 	}, {
 		key: 'renderFrame',
 		value: function renderFrame(frameId, ctx) {
-			var _this2 = this;
+			var _this3 = this;
 
 			ctx.save();
 			ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
@@ -261,12 +324,12 @@ var Body = (function () {
 
 			parts.forEach(function (part) {
 				var name = part.getName();
-				_this2.logger.groupCollapsed('rendering ' + name);
+				_this3.logger.groupCollapsed('rendering ' + name);
 				ctx.save();
 				part.positionContextForFrame(frameId, ctx);
 				part.drawSpriteForFrame(frameId, ctx);
 				ctx.restore();
-				_this2.logger.groupEnd();
+				_this3.logger.groupEnd();
 			});
 
 			ctx.restore();
@@ -395,7 +458,7 @@ var BodyPart = (function () {
 		key: 'loadAnimationInfo',
 		value: function loadAnimationInfo(duration, animationInfo) {
 			this.duration = duration;
-			this.animationInfo = new AnimationInfo(animationInfo, duration);
+			this.animationInfo = new AnimationInfo(animationInfo, duration, this);
 		}
 	}, {
 		key: 'getCalculatedFrame',

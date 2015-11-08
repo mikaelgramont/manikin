@@ -12,8 +12,8 @@
 			align-items: center;
 		}
 		#canvas-container {
-			width: 600px;
-			height: 600px;
+			width: 200px;
+			height: 200px;
 			position: relative;
 		}
 		.renderer {
@@ -30,285 +30,29 @@
 			z-index: 2;
 			outline: 1px solid #333;
 		}
+		#images {
+			display: none;
+		}
+		h1 {
+			font-family: helvetica;
+		}
 	</style>
 </head>
 <body>
+	<header>
+		<h1>Manikin</h1>
+	</header>
 	<main>
 		<div id="canvas-container">
-			<canvas id="grid" class="renderer" width="600" height="600"></canvas>
-			<canvas id="manikin" class="renderer" width="600" height="600"></canvas>
+			<canvas id="grid" class="renderer" width="200" height="200"></canvas>
+			<canvas id="manikin" class="renderer" width="200" height="200"></canvas>
+		</div>
+		<div class="action-container">
+		<label for="frame-id">Frame #</label>
+		<input type="range" id="frame-id" min="0">
 		</div>
 	</main>
 	<div id="images"></div>
-	<script>
-		var bodyConfig = {
-			name: 'manikin',
-			parts: {
-				'root': {
-					parentName: null,
-					relativePosition: [-10, 0],
-					centerOffset: [11, 7],
-					sprite: null,
-					layer: 1,
-				},
-				'hips': {
-					parentName: 'root',
-					relativePosition: [0, 0],
-					centerOffset: [11, 7],
-					sprite: './images/hips.png',
-					layer: 1,
-				},
-				'torso': {
-					parentName: 'hips',
-					relativePosition: [0, -39],
-					centerOffset: [11, 39],
-					sprite: './images/torso.png',
-					layer: 1,
-				},
-				'head': {
-					parentName: 'torso',
-					relativePosition: [0, -29],
-					centerOffset: [11, 28],
-					sprite: './images/head.png',
-					layer: 1,
-				},
-				'arm-left': {
-					parentName: 'torso',
-					relativePosition: [3, 0],
-					centerOffset: [8, 3],
-					sprite: './images/arm-left.png',
-					layer: 0,
-				},
-				'forearm-left': {
-					parentName: 'arm-left',
-					relativePosition: [1, 30],
-					centerOffset: [7, 2],
-					sprite: './images/forearm-left.png',
-					layer: 0,
-				},
-				'hand-left': {
-					parentName: 'forearm-left',
-					relativePosition: [2, 21],
-					centerOffset: [5, 0],
-					sprite: './images/hand-left.png',
-					layer: 0,
-				},
-				'arm-right': {
-					parentName: 'torso',
-					relativePosition: [3, 0],
-					centerOffset: [8, 3],
-					sprite: './images/arm-right.png',
-					layer: 2,
-				},
-				'forearm-right': {
-					parentName: 'arm-right',
-					relativePosition: [1, 30],
-					centerOffset: [7, 2],
-					sprite: './images/forearm-right.png',
-					layer: 2,
-				},
-				'hand-right': {
-					parentName: 'forearm-right',
-					relativePosition: [2, 21],
-					centerOffset: [5, 0],
-					sprite: './images/hand-right.png',
-					layer: 2,
-				},
-				'thigh-left': {
-					parentName: 'hips',
-					relativePosition: [3, 13],
-					centerOffset: [2, 2],
-					sprite: './images/thigh-left.png',
-					layer: 0,
-				},
-				'leg-left': {
-					parentName: 'thigh-left',
-					relativePosition: [1, 30],
-					centerOffset: [7, 2],
-					sprite: './images/leg-left.png',
-					layer: 0,
-				},
-				'foot-left': {
-					parentName: 'leg-left',
-					relativePosition: [1, 21],
-					centerOffset: [5, 0],
-					sprite: './images/foot-left.png',
-					layer: 0,
-				},
-				'thigh-right': {
-					parentName: 'hips',
-					relativePosition: [3, 13],
-					centerOffset: [2, 2],
-					sprite: './images/thigh-right.png',
-					layer: 2,
-				},
-				'leg-right': {
-					parentName: 'thigh-right',
-					relativePosition: [1, 30],
-					centerOffset: [7, 2],
-					sprite: './images/leg-right.png',
-					layer: 2,
-				},
-				'foot-right': {
-					parentName: 'leg-right',
-					relativePosition: [1, 21],
-					centerOffset: [5, 0],
-					sprite: './images/foot-right.png',
-					layer: 2,
-				},
-			}
-		};
-		var animationConfig = {
-			// The number of frames in the animation
-			duration: 31,
-			// Whether to loop at the end. Frame rate and loop count are UI settings.
-			looping: 1,
-			// An object holding an entry for all parts of the body.
-			// TEST: Must be 1-1 match b/w body content and config
-			frames: {
-				// The name of the part in the body hierarchy
-				'root': {
-					// A list of kvp's between frame id and rotation (in degrees).
-					// TEST: Keyframe ids must be lower than number of frames in animation.
-					rotation: {
-						0: 0,
-						10: 0,
-						20: 0,
-						30: 0,
-						// Since there are 20 frames and the anim is looping,
-						// we duplicate 0, and use that as frame 21 for calculations,
-						// but we drop it from the replay and instead go back to 0.
-					}
-				},
-				'hips': {
-					rotation: {
-						0: 0,
-						10: 0,
-						20: 0,
-						30: 0,
-					},
-				},
-				'torso': {
-					rotation: {
-						0: 10,
-						10: 0,
-						20: 10,
-						30: 0,
-					},
-				},					
-				'head':{
-					rotation: {
-						0: -10,
-						10: 0,
-						20: -10,
-						30: 0,
-					},
-				},
-
-				'thigh-left': {
-					rotation: {
-						0: 20,
-						10: -30,
-						20: -20,
-						30: 0,
-					},
-				},
-				'thigh-right': {
-					rotation: {
-						0: -20,
-						10: 0,
-						20: 20,
-						30: -30,
-					},
-				},
-
-				'leg-left': {
-					rotation: {
-						0: 20,
-						10: 60,
-						20: -10,
-						30: 0,
-					},
-				},
-				'leg-right': {
-					rotation: {
-						0: -10,
-						10: 0,
-						20: 20,
-						30: 60,
-					},
-				},
-
-				'foot-left': {
-					rotation: {
-						0: -30,
-						10: 0,
-						20: -5,
-						30: 0,
-					},
-				},
-				'foot-right': {
-					rotation: {
-						0: -5,
-						10: 0,
-						20: -30,
-						30: 0,
-					},
-				},
-
-				'arm-left': {
-					rotation: {
-						0: -30,
-						10: 0,
-						20: 40,
-						30: 20,
-					},
-				},
-				'arm-right': {
-					rotation: {
-						0: 40,
-						10: 20,
-						20: -30,
-						30: 0,
-					},
-				},
-
-				'forearm-left': {
-					rotation: {
-						0: -30,
-						10: -30,
-						20: -25,
-						30: -45,
-					},
-				},
-				'forearm-right': {
-					rotation: {
-						0: -25,
-						10: -45,
-						20: -30,
-						30: -30,
-					},
-				},
-
-				'hand-left': {
-					rotation: {
-						0: -10,
-						10: 0,
-						20: 10,
-						30: 0,
-					},
-				},
-				'hand-right': {
-					rotation: {
-						0: 10,
-						10: 0,
-						20: -10,
-						30: 0,
-					},
-				}					
-			}
-		};
-	</script>
 	<script src="scripts/app.js"></script>
 </body>
 </html>
