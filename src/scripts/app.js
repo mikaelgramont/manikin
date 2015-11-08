@@ -37,7 +37,8 @@ function drawGrid(ctx) {
 }
 
 function render(frameId) {
-	manikin.loadAnimation(window.animation);
+	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	manikin.loadAnimation(window.animationConfig);
 	manikin.calculateFrames();
 	manikin.renderFrame(frameId || 0, ctx);	
 }

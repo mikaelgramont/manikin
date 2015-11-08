@@ -72,33 +72,16 @@ function drawGrid(ctx) {
 }
 
 function render(frameId) {
-	manikin.loadAnimation(window.appConfig.animation);
+	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	manikin.loadAnimation(window.animationConfig);
 	manikin.calculateFrames();
 	manikin.renderFrame(frameId || 0, ctx);
-}
-
-function observeNested(obj, callback) {
-	for (var prop in obj) {
-		if (!obj.hasOwnProperty(prop)) {
-			continue;
-		}
-		if (obj[prop] === null) {
-			continue;
-		}
-		if (typeof obj[prop] === 'object') {
-			Object.observe(obj[prop], function (changes) {
-				callback();
-			});
-			observeNested(obj[prop], callback);
-		}
-	}
 }
 
 window.logger = logger;
 window.render = render;
 window.manikin = manikin;
 
-observeNested(window.appConfig, render);
 drawGrid(gridCtx);
 
 },{"./body":3,"./logger":5,"./proxydebugger":6}],3:[function(require,module,exports){
@@ -121,7 +104,6 @@ var Body = (function () {
 		this.logger = logger;
 
 		this.root = null;
-		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
 
@@ -196,7 +178,6 @@ var Body = (function () {
 		value: function loadAnimation(animObject) {
 			var _this = this;
 
-			this.spritesheet = animObject.spritesheet;
 			this.duration = animObject.duration;
 			this.looping = animObject.looping;
 
@@ -386,9 +367,12 @@ var BodyPart = (function () {
 			this.animationInfo = new AnimationInfo(animationInfo);
 		}
 	}, {
-		key: 'getCalculatedFrames',
-		value: function getCalculatedFrames() {
-			return this.calculatedFrames;
+		key: 'getCalculatedFrame',
+		value: function getCalculatedFrame(frameId) {
+			if (frameId >= this.duration) {
+				throw new Error('Requested frameId (' + frameId + ') too high. Duration is ' + this.duration + '.');
+			}
+			return this.calculatedFrames[frameId];
 		}
 	}, {
 		key: 'calculateFrames',
@@ -428,7 +412,7 @@ var BodyPart = (function () {
 			var parentParts = this.getParentChain();
 			parentParts.forEach(function (parentPart) {
 				_this2.logger.groupCollapsed('positioning canvas according to ' + parentPart.getName());
-				var frameInfo = parentPart.getCalculatedFrames()[frameId];
+				var frameInfo = parentPart.getCalculatedFrame(frameId);
 				ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
 				ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
 				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
@@ -447,7 +431,7 @@ var BodyPart = (function () {
 			if (!this.sprite) {
 				return;
 			}
-			var frameInfo = this.getCalculatedFrames()[frameId];
+			var frameInfo = this.getCalculatedFrame(frameId);
 			ctx.translate(this.relativePosition[0], this.relativePosition[1]);
 			ctx.translate(this.centerOffset[0], this.centerOffset[1]);
 			ctx.rotate(Math.PI / 180 * frameInfo.rotation);

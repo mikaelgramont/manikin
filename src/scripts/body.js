@@ -9,7 +9,6 @@ class Body {
 		this.logger = logger;
 
 		this.root = null;
-		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
 
@@ -85,7 +84,6 @@ class Body {
 	}
 
 	loadAnimation(animObject) {
-		this.spritesheet = animObject.spritesheet;
 		this.duration = animObject.duration;
 		this.looping = animObject.looping;
 

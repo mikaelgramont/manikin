@@ -95,8 +95,11 @@ class BodyPart {
 		this.animationInfo = new AnimationInfo(animationInfo);
 	}
 
-	getCalculatedFrames() {
-		return this.calculatedFrames;
+	getCalculatedFrame(frameId) {
+		if (frameId >= this.duration) {
+			throw new Error(`Requested frameId (${frameId}) too high. Duration is ${this.duration}.`)
+		}
+		return this.calculatedFrames[frameId];
 	}
 
 	calculateFrames() {
@@ -130,7 +133,7 @@ class BodyPart {
 		let parentParts = this.getParentChain();
 		parentParts.forEach((parentPart) => {
 			this.logger.groupCollapsed(`positioning canvas according to ${parentPart.getName()}`);
-			let frameInfo = parentPart.getCalculatedFrames()[frameId];
+			let frameInfo = parentPart.getCalculatedFrame(frameId);
 			ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
 			ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
 			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
@@ -147,7 +150,7 @@ class BodyPart {
 		if (!this.sprite) {
 			return;
 		}
-		let frameInfo = this.getCalculatedFrames()[frameId];
+		let frameInfo = this.getCalculatedFrame(frameId);
 		ctx.translate(this.relativePosition[0], this.relativePosition[1]);
 		ctx.translate(this.centerOffset[0], this.centerOffset[1]);
 		ctx.rotate((Math.PI / 180) * frameInfo.rotation);
