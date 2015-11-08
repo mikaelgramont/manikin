@@ -147,59 +147,67 @@ var Body = (function () {
 	_createClass(Body, [{
 		key: 'createParts',
 		value: function createParts() {
-			// hips: 20x14
-			var hips = new BodyPart('hips', [0, 0], [10, 7], './images/hips.png', this.logger);
+			// hips: 22x15
+			var hips = new BodyPart('hips', [0, 0], [11, 7], './images/hips.png', this.logger);
 			this.root.addChild(hips);
 
-			// torso: 21x39
+			// torso: 22x39
 			// [0, -39]: go up to the top left corner relative to the parent.
 			// Then move locally to the bottom center.
-			var torso = new BodyPart('torso', [0, -39], [10, 39], './images/torso.png', this.logger);
+			var torso = new BodyPart('torso', [0, -39], [11, 39], './images/torso.png', this.logger);
 			hips.addChild(torso);
 
-			// let neck = new BodyPart('neck');
-			// torso.addChild(neck);
+			// head: 22x29
+			var head = new BodyPart('head', [0, -29], [11, 28], './images/head.png', this.logger);
+			torso.addChild(head);
 
-			// let head = new BodyPart('head');
-			// neck.addChild(head);
-
-			// left arm: 11x24
-			var leftArm = new BodyPart('arm-left', [5, 0], [6, 8], './images/arm-left.png', this.logger);
+			// left arm: 16x32
+			var leftArm = new BodyPart('arm-left', [3, 0], [8, 3], './images/arm-left.png', this.logger);
 			torso.addChild(leftArm);
 
-			// left forearm: 11x22
-			// let leftForeArm = new BodyPart('forearm-left', [0, 35], [5, 35], '#ffff40', './images/forearm-left.png');
-			// leftArm.addChild(leftForeArm);
+			// left forearm: 14x22
+			var leftForeArm = new BodyPart('forearm-left', [1, 30], [7, 2], './images/forearm-left.png', this.logger);
+			leftArm.addChild(leftForeArm);
 
-			// let leftHand = new BodyPart('hand-left');
-			// leftForeArm.addChild(leftHand);
+			// left hand: 10x14
+			var leftHand = new BodyPart('hand-left', [2, 21], [5, 0], './images/hand-left.png', this.logger);
+			leftForeArm.addChild(leftHand);
 
-			// let rightArm = new BodyPart('arm-right');
-			// torso.addChild(rightArm);
+			// right arm: 16x32
+			var rightArm = new BodyPart('arm-right', [3, 0], [8, 3], './images/arm-right.png', this.logger);
+			torso.addChild(rightArm);
 
-			// let rightForeArm = new BodyPart('forearm-right');
-			// rightArm.addChild(rightForeArm);
+			// left forearm: 14x22
+			var rightForeArm = new BodyPart('forearm-right', [1, 30], [7, 2], './images/forearm-right.png', this.logger);
+			rightArm.addChild(rightForeArm);
 
-			// let rightHand = new BodyPart('hand-right');
-			// rightForeArm.addChild(rightHand);
+			// left hand: 10x14
+			var rightHand = new BodyPart('hand-right', [2, 21], [5, 0], './images/hand-right.png', this.logger);
+			rightForeArm.addChild(rightHand);
 
-			// let leftThigh = new BodyPart('thigh-left', [20, 50], [0, 20], [10, 20], '#ff40ff');
-			// hips.addChild(leftThigh);
+			// left thigh: 14x22
+			var leftThigh = new BodyPart('thigh-left', [3, 13], [2, 2], './images/thigh-left.png', this.logger);
+			hips.addChild(leftThigh);
 
-			// let leftLeg = new BodyPart('leg-left');
-			// leftThigh.addChild(leftLeg);
+			// left forearm: 14x22
+			var leftLeg = new BodyPart('leg-left', [1, 30], [7, 2], './images/leg-left.png', this.logger);
+			leftThigh.addChild(leftLeg);
 
-			// let leftFoot = new BodyPart('foot-left');
-			// leftLeg.addChild(leftFoot);
+			// left foot: 27x10
+			var leftFoot = new BodyPart('foot-left', [1, 21], [5, 0], './images/foot-left.png', this.logger);
+			leftLeg.addChild(leftFoot);
 
-			// let rightThigh = new BodyPart('thigh-right');
-			// hips.addChild(rightThigh);
+			// right thigh: 14x22
+			var rightThigh = new BodyPart('thigh-right', [3, 13], [2, 2], './images/thigh-right.png', this.logger);
+			hips.addChild(rightThigh);
 
-			// let rightLeg = new BodyPart('leg-right');
-			// leftThigh.addChild(rightLeg);
+			// right forearm: 14x22
+			var rightLeg = new BodyPart('leg-right', [1, 30], [7, 2], './images/leg-right.png', this.logger);
+			rightThigh.addChild(rightLeg);
 
-			// let rightFoot = new BodyPart('foot-right');
-			// rightLeg.addChild(rightFoot);
+			// right foot: 27x10
+			var rightFoot = new BodyPart('foot-right', [1, 21], [5, 0], './images/foot-right.png', this.logger);
+			rightLeg.addChild(rightFoot);
 		}
 	}, {
 		key: 'forEachPart',
