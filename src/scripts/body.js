@@ -1,10 +1,9 @@
 let BodyPart = require('./bodypart');
-let Queue = require('./queue');
 let Stack = require('./stack');
 
 class Body {
-	constructor(name, absolutePosition, bodyConfig, logger) {
-		this.name = name;
+	constructor(bodyConfig, absolutePosition, logger) {
+		this.name = bodyConfig.name;
 		this.absolutePosition = absolutePosition;
 		this.bodyConfig = bodyConfig;
 		this.logger = logger;
@@ -20,13 +19,14 @@ class Body {
 	createParts() {
 		let parts = {};
 		// Step 1: build all parts.
-		for (let partName in bodyConfig) {
-			let partConfig = bodyConfig[partName];
+		for (let partName in bodyConfig.parts) {
+			let partConfig = bodyConfig.parts[partName];
 			parts[partName] = new BodyPart(
 				partName,
 				partConfig.relativePosition,
 				partConfig.centerOffset,
 				partConfig.sprite,
+				partConfig.layer,
 				this.logger);
 
 			if (partName == 'root') {
@@ -39,7 +39,7 @@ class Body {
 			if (partName == 'root') {
 				continue;
 			}
-			let partConfig = bodyConfig[partName];
+			let partConfig = bodyConfig.parts[partName];
 			let childPart = parts[partName];
 			let parentPart = parts[partConfig.parentName];
 
@@ -52,19 +52,8 @@ class Body {
 	}
 
 	forEachPart(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
-		this.forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
-	}
-
-	forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
-		this._forEachPart(fn, new Stack(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
-	}
-
-	forEachPartBFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
-		this._forEachPart(fn, new Queue(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
-	}
-
-	_forEachPart(fn, storage, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
 		var explored = [];
+		let storage = new Stack();
 		storage.flush();
 		storage.push(this.root);
 		fn(this.root, this.root.getName());
@@ -131,7 +120,18 @@ class Body {
 		ctx.save();
 		ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
+		// Build a list of parts, ordered by layer.
+		let parts = []
 		this.forEachPart((part, name) => {
+			parts.push(part);
+		});
+
+		parts.sort((a, b) => {
+			return a.layer - b.layer;
+		});
+
+		parts.forEach((part) => {
+			let name = part.getName();
 			this.logger.groupCollapsed(`rendering ${name}`);
 			ctx.save();
 			part.positionContextForFrame(frameId, ctx);

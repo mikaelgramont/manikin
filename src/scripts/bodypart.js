@@ -1,7 +1,7 @@
 let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
-	constructor(name, relativePosition, centerOffset, sprite, logger) {
+	constructor(name, relativePosition, centerOffset, sprite, layer, logger) {
 		this.name = name;
 
 		// Vector going from parent to this part.
@@ -9,6 +9,8 @@ class BodyPart {
 
 		// Offset to allow parts to rotate around the joints.
 		this.centerOffset = centerOffset;
+
+		this.layer = layer;
 
 		if (sprite) {
 			let img = document.createElement('img');
@@ -111,6 +113,9 @@ class BodyPart {
 	}
 
 	getDrawInfoForFrame(frameId) {
+		if (frameId >= this.duration) {
+			throw new Error(`Requested frameId (${frameId}) too high. Duration is ${this.duration}.`)
+		}
 		return {
 			'position': this.calculatedFrames.position[frameId],
 			'rotation': this.calculatedFrames.rotation[frameId]

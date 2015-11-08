@@ -34,34 +34,14 @@ module.exports = AnimationInfo;
 'use strict';
 
 var Body = require('./body');
+var Logger = require('./logger');
 var ProxyDebugger = require('./proxydebugger');
 
-var Logger = function Logger() {
-	this.enabled = true;
-};
-Logger.prototype.log = function () {
-	if (this.enabled) {
-		console.log.apply(console, arguments);
-	}
-};
-Logger.prototype.group = function () {
-	if (this.enabled) {
-		console.group.apply(console, arguments);
-	}
-};
-Logger.prototype.groupCollapsed = function () {
-	if (this.enabled) {
-		console.groupCollapsed.apply(console, arguments);
-	}
-};
-Logger.prototype.groupEnd = function () {
-	if (this.enabled) {
-		console.groupEnd.apply(console, arguments);
-	}
-};
 var logger = new Logger();
-var manikin = new Body(window.appConfig.bodyName, [300, 300], window.bodyConfig, logger);
+logger.enabled = false;
+var manikin = new Body(window.bodyConfig, [300, 300], logger);
 
+var gridCtx = document.getElementById('grid').getContext('2d');
 var ctx = document.getElementById('manikin').getContext('2d');
 ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
 	'rotate': function rotate(argsIn) {
@@ -69,7 +49,7 @@ ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
 	}
 });
 
-function render() {
+function drawGrid(ctx) {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	logger.groupCollapsed('Drawing grid');
 	for (var i = 200; i <= 400; i += 10) {
@@ -89,15 +69,13 @@ function render() {
 		ctx.stroke();
 	}
 	logger.groupEnd('Drawing grid');
-
-	manikin.loadAnimation(window.appConfig.animation);
-	manikin.calculateFrames();
-	manikin.renderFrame(0, ctx);
 }
 
-window.logger = logger;
-window.render = render;
-window.manikin = manikin;
+function render(frameId) {
+	manikin.loadAnimation(window.appConfig.animation);
+	manikin.calculateFrames();
+	manikin.renderFrame(frameId || 0, ctx);
+}
 
 function observeNested(obj, callback) {
 	for (var prop in obj) {
@@ -116,9 +94,14 @@ function observeNested(obj, callback) {
 	}
 }
 
-observeNested(window.appConfig, render);
+window.logger = logger;
+window.render = render;
+window.manikin = manikin;
 
-},{"./body":3,"./proxydebugger":5}],3:[function(require,module,exports){
+observeNested(window.appConfig, render);
+drawGrid(gridCtx);
+
+},{"./body":3,"./logger":5,"./proxydebugger":6}],3:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -126,14 +109,13 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var BodyPart = require('./bodypart');
-var Queue = require('./queue');
 var Stack = require('./stack');
 
 var Body = (function () {
-	function Body(name, absolutePosition, bodyConfig, logger) {
+	function Body(bodyConfig, absolutePosition, logger) {
 		_classCallCheck(this, Body);
 
-		this.name = name;
+		this.name = bodyConfig.name;
 		this.absolutePosition = absolutePosition;
 		this.bodyConfig = bodyConfig;
 		this.logger = logger;
@@ -151,9 +133,9 @@ var Body = (function () {
 		value: function createParts() {
 			var parts = {};
 			// Step 1: build all parts.
-			for (var partName in bodyConfig) {
-				var partConfig = bodyConfig[partName];
-				parts[partName] = new BodyPart(partName, partConfig.relativePosition, partConfig.centerOffset, partConfig.sprite, this.logger);
+			for (var partName in bodyConfig.parts) {
+				var partConfig = bodyConfig.parts[partName];
+				parts[partName] = new BodyPart(partName, partConfig.relativePosition, partConfig.centerOffset, partConfig.sprite, partConfig.layer, this.logger);
 
 				if (partName == 'root') {
 					this.root = parts[partName];
@@ -165,7 +147,7 @@ var Body = (function () {
 				if (partName == 'root') {
 					continue;
 				}
-				var partConfig = bodyConfig[partName];
+				var partConfig = bodyConfig.parts[partName];
 				var childPart = parts[partName];
 				var parentPart = parts[partConfig.parentName];
 
@@ -179,22 +161,8 @@ var Body = (function () {
 	}, {
 		key: 'forEachPart',
 		value: function forEachPart(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
-			this.forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
-		}
-	}, {
-		key: 'forEachPartDFS',
-		value: function forEachPartDFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
-			this._forEachPart(fn, new Stack(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
-		}
-	}, {
-		key: 'forEachPartBFS',
-		value: function forEachPartBFS(fn, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
-			this._forEachPart(fn, new Queue(), beforeLoopOverChildrenFn, afterLoopOverChildrenFn);
-		}
-	}, {
-		key: '_forEachPart',
-		value: function _forEachPart(fn, storage, beforeLoopOverChildrenFn, afterLoopOverChildrenFn) {
 			var explored = [];
+			var storage = new Stack();
 			storage.flush();
 			storage.push(this.root);
 			fn(this.root, this.root.getName());
@@ -269,7 +237,18 @@ var Body = (function () {
 			ctx.save();
 			ctx.translate(this.absolutePosition[0], this.absolutePosition[1]);
 
+			// Build a list of parts, ordered by layer.
+			var parts = [];
 			this.forEachPart(function (part, name) {
+				parts.push(part);
+			});
+
+			parts.sort(function (a, b) {
+				return a.layer - b.layer;
+			});
+
+			parts.forEach(function (part) {
+				var name = part.getName();
 				_this2.logger.groupCollapsed('rendering ' + name);
 				ctx.save();
 				part.positionContextForFrame(frameId, ctx);
@@ -287,7 +266,7 @@ var Body = (function () {
 
 module.exports = Body;
 
-},{"./bodypart":4,"./queue":6,"./stack":7}],4:[function(require,module,exports){
+},{"./bodypart":4,"./stack":7}],4:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -297,7 +276,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
-	function BodyPart(name, relativePosition, centerOffset, sprite, logger) {
+	function BodyPart(name, relativePosition, centerOffset, sprite, layer, logger) {
 		var _this = this;
 
 		_classCallCheck(this, BodyPart);
@@ -309,6 +288,8 @@ var BodyPart = (function () {
 
 		// Offset to allow parts to rotate around the joints.
 		this.centerOffset = centerOffset;
+
+		this.layer = layer;
 
 		if (sprite) {
 			var img = document.createElement('img');
@@ -426,6 +407,9 @@ var BodyPart = (function () {
 	}, {
 		key: 'getDrawInfoForFrame',
 		value: function getDrawInfoForFrame(frameId) {
+			if (frameId >= this.duration) {
+				throw new Error('Requested frameId (' + frameId + ') too high. Duration is ' + this.duration + '.');
+			}
 			return {
 				'position': this.calculatedFrames.position[frameId],
 				'rotation': this.calculatedFrames.rotation[frameId]
@@ -480,6 +464,35 @@ module.exports = BodyPart;
 },{"./animationInfo":1}],5:[function(require,module,exports){
 "use strict";
 
+var Logger = function Logger() {
+	this.enabled = true;
+};
+Logger.prototype.log = function () {
+	if (this.enabled) {
+		console.log.apply(console, arguments);
+	}
+};
+Logger.prototype.group = function () {
+	if (this.enabled) {
+		console.group.apply(console, arguments);
+	}
+};
+Logger.prototype.groupCollapsed = function () {
+	if (this.enabled) {
+		console.groupCollapsed.apply(console, arguments);
+	}
+};
+Logger.prototype.groupEnd = function () {
+	if (this.enabled) {
+		console.groupEnd.apply(console, arguments);
+	}
+};
+
+module.exports = Logger;
+
+},{}],6:[function(require,module,exports){
+"use strict";
+
 var ProxyDebugger = {
 	instrumentContext: function instrumentContext(original, logName, logger, modifiers) {
 		// The object that all calls will go through
@@ -522,51 +535,6 @@ var ProxyDebugger = {
 };
 
 module.exports = ProxyDebugger;
-
-},{}],6:[function(require,module,exports){
-"use strict";
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Queue = (function () {
-	function Queue(onpop, onpush) {
-		_classCallCheck(this, Queue);
-
-		this.arr = [];
-		this.onpop = onpop;
-		this.onpush = onpush;
-	}
-
-	_createClass(Queue, [{
-		key: "push",
-		value: function push(node) {
-			this.arr.push(node);
-			if (this.onpush) {
-				this.onpush(node);
-			}
-		}
-	}, {
-		key: "pop",
-		value: function pop() {
-			var node = this.arr.shift();
-			if (this.onpop) {
-				this.onpop();
-			}
-			return node;
-		}
-	}, {
-		key: "flush",
-		value: function flush() {
-			this.arr.length = 0;
-		}
-	}]);
-
-	return Queue;
-})();
-
-module.exports = Queue;
 
 },{}],7:[function(require,module,exports){
 "use strict";

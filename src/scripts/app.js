@@ -1,32 +1,12 @@
 let Body = require('./body');
+let Logger = require('./logger');
 let ProxyDebugger = require('./proxydebugger');
 
-let Logger = function() {
-	this.enabled = true;
-};
-Logger.prototype.log = function() {
-	if (this.enabled) {
-		console.log.apply(console, arguments);
-	}
-}
-Logger.prototype.group = function() {
-	if (this.enabled) {
-		console.group.apply(console, arguments);
-	}
-}
-Logger.prototype.groupCollapsed = function() {
-	if (this.enabled) {
-		console.groupCollapsed.apply(console, arguments);
-	}
-}
-Logger.prototype.groupEnd = function() {
-	if (this.enabled) {
-		console.groupEnd.apply(console, arguments);
-	}
-}
 let logger = new Logger();
-let manikin = new Body(window.appConfig.bodyName, [300, 300], window.bodyConfig, logger);
+logger.enabled = false;
+let manikin = new Body(window.bodyConfig, [300, 300], logger);
 
+let gridCtx = document.getElementById('grid').getContext('2d');
 let ctx = document.getElementById('manikin').getContext('2d');
 ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
 	'rotate': (argsIn) => {
@@ -34,7 +14,7 @@ ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
 	}
 });
 
-function render() {
+function drawGrid(ctx) {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	logger.groupCollapsed('Drawing grid');
 	for (let i = 200; i <= 400; i+=10) {
@@ -54,15 +34,13 @@ function render() {
 		ctx.stroke();
 	}
 	logger.groupEnd('Drawing grid');
-
-	manikin.loadAnimation(window.appConfig.animation);
-	manikin.calculateFrames();
-	manikin.renderFrame(0, ctx);	
 }
 
-window.logger = logger;
-window.render = render;
-window.manikin = manikin;
+function render(frameId) {
+	manikin.loadAnimation(window.appConfig.animation);
+	manikin.calculateFrames();
+	manikin.renderFrame(frameId || 0, ctx);	
+}
 
 function observeNested(obj, callback) {
 	for(let prop in obj) {
@@ -81,4 +59,9 @@ function observeNested(obj, callback) {
 	}
 }
 
+window.logger = logger;
+window.render = render;
+window.manikin = manikin;
+
 observeNested(window.appConfig, render);
+drawGrid(gridCtx);

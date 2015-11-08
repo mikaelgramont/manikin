@@ -11,105 +11,157 @@
 			justify-content: center;
 			align-items: center;
 		}
-		canvas {
+		#canvas-container {
+			width: 600px;
+			height: 600px;
+			position: relative;
+		}
+		.renderer {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;			
+		}
+		#grid {
+			z-index: 1;
+		}
+		#manikin {
+			z-index: 2;
 			outline: 1px solid #333;
 		}
 	</style>
 </head>
 <body>
 	<main>
-		<canvas id="manikin" width="600" height="600"></canvas>
+		<div id="canvas-container">
+			<canvas id="grid" class="renderer" width="600" height="600"></canvas>
+			<canvas id="manikin" class="renderer" width="600" height="600"></canvas>
+		</div>
 	</main>
 	<div id="images"></div>
 	<script>
 		var bodyConfig = {
-			'root': {
-				parentName: null,
-				relativePosition: [-10, 0],
-				centerOffset: [11, 7],
-				sprite: null
-			},
-			'hips': {
-				parentName: 'root',
-				relativePosition: [0, 0],
-				centerOffset: [11, 7],
-				sprite: './images/hips.png'
-			},
-			'torso': {
-				parentName: 'hips',
-				relativePosition: [0, -39],
-				centerOffset: [11, 39],
-				sprite: './images/torso.png'
-			},
-			'head': {
-				parentName: 'torso',
-				relativePosition: [0, -29],
-				centerOffset: [11, 28],
-				sprite: './images/head.png'
-			},
-			'arm-left': {
-				parentName: 'torso',
-				relativePosition: [3, 0],
-				centerOffset: [8, 3],
-				sprite: './images/arm-left.png'
-			},
-			'forearm-left': {
-				parentName: 'arm-left',
-				relativePosition: [1, 30],
-				centerOffset: [7, 2],
-				sprite: './images/forearm-left.png'
-			},
-			'hand-left': {
-				parentName: 'forearm-left',
-				relativePosition: [2, 21],
-				centerOffset: [5, 0],
-				sprite: './images/hand-left.png'
-			},
-			'arm-right': {
-				parentName: 'torso',
-				relativePosition: [3, 0],
-				centerOffset: [8, 3],
-				sprite: './images/arm-right.png'
-			},
-			'forearm-right': {
-				parentName: 'arm-right',
-				relativePosition: [1, 30],
-				centerOffset: [7, 2],
-				sprite: './images/forearm-right.png'
-			},
-			'hand-right': {
-				parentName: 'forearm-right',
-				relativePosition: [2, 21],
-				centerOffset: [5, 0],
-				sprite: './images/hand-right.png'
-			},
-			'thigh-right': {
-				parentName: 'hips',
-				relativePosition: [3, 13],
-				centerOffset: [2, 2],
-				sprite: './images/thigh-right.png'
-			},
-			'leg-right': {
-				parentName: 'thigh-right',
-				relativePosition: [1, 30],
-				centerOffset: [7, 2],
-				sprite: './images/leg-right.png'
-			},
-			'foot-right': {
-				parentName: 'leg-right',
-				relativePosition: [1, 21],
-				centerOffset: [5, 0],
-				sprite: './images/foot-right.png'
-			},
+			name: 'manikin',
+			parts: {
+				'root': {
+					parentName: null,
+					relativePosition: [-10, 0],
+					centerOffset: [11, 7],
+					sprite: null,
+					layer: 1,
+				},
+				'hips': {
+					parentName: 'root',
+					relativePosition: [0, 0],
+					centerOffset: [11, 7],
+					sprite: './images/hips.png',
+					layer: 1,
+				},
+				'torso': {
+					parentName: 'hips',
+					relativePosition: [0, -39],
+					centerOffset: [11, 39],
+					sprite: './images/torso.png',
+					layer: 1,
+				},
+				'head': {
+					parentName: 'torso',
+					relativePosition: [0, -29],
+					centerOffset: [11, 28],
+					sprite: './images/head.png',
+					layer: 1,
+				},
+				'arm-left': {
+					parentName: 'torso',
+					relativePosition: [3, 0],
+					centerOffset: [8, 3],
+					sprite: './images/arm-left.png',
+					layer: 0,
+				},
+				'forearm-left': {
+					parentName: 'arm-left',
+					relativePosition: [1, 30],
+					centerOffset: [7, 2],
+					sprite: './images/forearm-left.png',
+					layer: 0,
+				},
+				'hand-left': {
+					parentName: 'forearm-left',
+					relativePosition: [2, 21],
+					centerOffset: [5, 0],
+					sprite: './images/hand-left.png',
+					layer: 0,
+				},
+				'arm-right': {
+					parentName: 'torso',
+					relativePosition: [3, 0],
+					centerOffset: [8, 3],
+					sprite: './images/arm-right.png',
+					layer: 2,
+				},
+				'forearm-right': {
+					parentName: 'arm-right',
+					relativePosition: [1, 30],
+					centerOffset: [7, 2],
+					sprite: './images/forearm-right.png',
+					layer: 2,
+				},
+				'hand-right': {
+					parentName: 'forearm-right',
+					relativePosition: [2, 21],
+					centerOffset: [5, 0],
+					sprite: './images/hand-right.png',
+					layer: 2,
+				},
+				'thigh-left': {
+					parentName: 'hips',
+					relativePosition: [3, 13],
+					centerOffset: [2, 2],
+					sprite: './images/thigh-left.png',
+					layer: 0,
+				},
+				'leg-left': {
+					parentName: 'thigh-left',
+					relativePosition: [1, 30],
+					centerOffset: [7, 2],
+					sprite: './images/leg-left.png',
+					layer: 0,
+				},
+				'foot-left': {
+					parentName: 'leg-left',
+					relativePosition: [1, 21],
+					centerOffset: [5, 0],
+					sprite: './images/foot-left.png',
+					layer: 0,
+				},
+				'thigh-right': {
+					parentName: 'hips',
+					relativePosition: [3, 13],
+					centerOffset: [2, 2],
+					sprite: './images/thigh-right.png',
+					layer: 2,
+				},
+				'leg-right': {
+					parentName: 'thigh-right',
+					relativePosition: [1, 30],
+					centerOffset: [7, 2],
+					sprite: './images/leg-right.png',
+					layer: 2,
+				},
+				'foot-right': {
+					parentName: 'leg-right',
+					relativePosition: [1, 21],
+					centerOffset: [5, 0],
+					sprite: './images/foot-right.png',
+					layer: 2,
+				},
+			}
 		};
 		var appConfig = {
-			bodyName: 'manikin',
 			animation: {
-				// The path to the spritesheet. May be overriden in each child.
-				// TEST: must load.
-				spritesheet: '/path/to/spritesheet.png',
 				// The number of frames in the animation
-				duration: 1,
+				duration: 2,
 				// Whether to loop at the end. Frame rate and loop count are UI settings.
 				looping: 1,
 				// An object holding an entry for all parts of the body.
@@ -120,7 +172,8 @@
 						// A list of kvp's between frame id and rotation (in degrees).
 						// TEST: Keyframe ids must be lower than number of frames in animation.
 						rotation: {
-							0: 0
+							0: 0,
+							1: 0,
 							// Since there are 20 frames and the anim is looping,
 							// we duplicate 0, and use that as frame 21 for calculations,
 							// but we drop it from the replay and instead go back to 0.
@@ -128,77 +181,92 @@
 					},
 					'hips': {
 						rotation: {
-							0:0
+							0: 0,
+							1: 0,
 						},
 					},
 					'torso': {
 						rotation: {
-							0:0
+							0: 0,
+							1: 10,
 						},
 					},					
 					'head':{
 						rotation: {
-							0:0
+							0: 0,
+							1: -10,
 						},
 					},
 					'thigh-left': {
 						rotation: {
-							0:0
+							0: 0,
+							1: 20,
 						},
 					},
 					'leg-left': {
 						rotation: {
-							0:0
+							0: 0,
+							1: 20,
 						},
 					},
 					'foot-left': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -30,
 						},
 					},
 					'thigh-right': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -20,
 						},
 					},
 					'leg-right': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -10,
 						},
 					},
 					'foot-right': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -5,
 						},
 					},
 					'arm-left': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -30,
 						},
 					},
 					'forearm-left': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -30,
 						},
 					},
 					'hand-left': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -10,
 						},
 					},
 					'arm-right': {
 						rotation: {
-							0:0
+							0: 0,
+							1: 40,
 						},
 					},
 					'forearm-right': {
 						rotation: {
-							0:0
+							0: 0,
+							1: -25,
 						},
 					},
 					'hand-right': {
 						rotation: {
-							0:0
+							0: 0,
+							1: 10,
 						},
 					}					
 				}
