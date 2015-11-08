@@ -22,6 +22,86 @@
 	</main>
 	<div id="images"></div>
 	<script>
+		var bodyConfig = {
+			'root': {
+				parentName: null,
+				relativePosition: [-10, 0],
+				centerOffset: [11, 7],
+				sprite: null
+			},
+			'hips': {
+				parentName: 'root',
+				relativePosition: [0, 0],
+				centerOffset: [11, 7],
+				sprite: './images/hips.png'
+			},
+			'torso': {
+				parentName: 'hips',
+				relativePosition: [0, -39],
+				centerOffset: [11, 39],
+				sprite: './images/torso.png'
+			},
+			'head': {
+				parentName: 'torso',
+				relativePosition: [0, -29],
+				centerOffset: [11, 28],
+				sprite: './images/head.png'
+			},
+			'arm-left': {
+				parentName: 'torso',
+				relativePosition: [3, 0],
+				centerOffset: [8, 3],
+				sprite: './images/arm-left.png'
+			},
+			'forearm-left': {
+				parentName: 'arm-left',
+				relativePosition: [1, 30],
+				centerOffset: [7, 2],
+				sprite: './images/forearm-left.png'
+			},
+			'hand-left': {
+				parentName: 'forearm-left',
+				relativePosition: [2, 21],
+				centerOffset: [5, 0],
+				sprite: './images/hand-left.png'
+			},
+			'arm-right': {
+				parentName: 'torso',
+				relativePosition: [3, 0],
+				centerOffset: [8, 3],
+				sprite: './images/arm-right.png'
+			},
+			'forearm-right': {
+				parentName: 'arm-right',
+				relativePosition: [1, 30],
+				centerOffset: [7, 2],
+				sprite: './images/forearm-right.png'
+			},
+			'hand-right': {
+				parentName: 'forearm-right',
+				relativePosition: [2, 21],
+				centerOffset: [5, 0],
+				sprite: './images/hand-right.png'
+			},
+			'thigh-right': {
+				parentName: 'hips',
+				relativePosition: [3, 13],
+				centerOffset: [2, 2],
+				sprite: './images/thigh-right.png'
+			},
+			'leg-right': {
+				parentName: 'thigh-right',
+				relativePosition: [1, 30],
+				centerOffset: [7, 2],
+				sprite: './images/leg-right.png'
+			},
+			'foot-right': {
+				parentName: 'leg-right',
+				relativePosition: [1, 21],
+				centerOffset: [5, 0],
+				sprite: './images/foot-right.png'
+			},
+		};
 		var appConfig = {
 			bodyName: 'manikin',
 			animation: {

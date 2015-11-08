@@ -60,7 +60,7 @@ Logger.prototype.groupEnd = function () {
 	}
 };
 var logger = new Logger();
-var manikin = new Body(window.appConfig.bodyName, [300, 300], logger);
+var manikin = new Body(window.appConfig.bodyName, [300, 300], window.bodyConfig, logger);
 
 var ctx = document.getElementById('manikin').getContext('2d');
 ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
@@ -130,84 +130,51 @@ var Queue = require('./queue');
 var Stack = require('./stack');
 
 var Body = (function () {
-	function Body(name, absolutePosition, logger) {
+	function Body(name, absolutePosition, bodyConfig, logger) {
 		_classCallCheck(this, Body);
 
 		this.name = name;
 		this.absolutePosition = absolutePosition;
+		this.bodyConfig = bodyConfig;
 		this.logger = logger;
 
-		this.root = new BodyPart('root', [-10, 0], [0, 0], null, this.logger);
+		this.root = null;
 		this.spritesheet = null;
 		this.duration = null;
 		this.looping = null;
+
 		this.createParts();
 	}
 
 	_createClass(Body, [{
 		key: 'createParts',
 		value: function createParts() {
-			// hips: 22x15
-			var hips = new BodyPart('hips', [0, 0], [11, 7], './images/hips.png', this.logger);
-			this.root.addChild(hips);
+			var parts = {};
+			// Step 1: build all parts.
+			for (var partName in bodyConfig) {
+				var partConfig = bodyConfig[partName];
+				parts[partName] = new BodyPart(partName, partConfig.relativePosition, partConfig.centerOffset, partConfig.sprite, this.logger);
 
-			// torso: 22x39
-			// [0, -39]: go up to the top left corner relative to the parent.
-			// Then move locally to the bottom center.
-			var torso = new BodyPart('torso', [0, -39], [11, 39], './images/torso.png', this.logger);
-			hips.addChild(torso);
+				if (partName == 'root') {
+					this.root = parts[partName];
+				}
+			}
 
-			// head: 22x29
-			var head = new BodyPart('head', [0, -29], [11, 28], './images/head.png', this.logger);
-			torso.addChild(head);
+			// Step 2: setup parent-child relationships.
+			for (var partName in parts) {
+				if (partName == 'root') {
+					continue;
+				}
+				var partConfig = bodyConfig[partName];
+				var childPart = parts[partName];
+				var parentPart = parts[partConfig.parentName];
 
-			// left arm: 16x32
-			var leftArm = new BodyPart('arm-left', [3, 0], [8, 3], './images/arm-left.png', this.logger);
-			torso.addChild(leftArm);
+				if (!parentPart) {
+					throw new Error('Cannot find parent element by name ' + partConfig.parentName + ' for child ' + partName);
+				}
 
-			// left forearm: 14x22
-			var leftForeArm = new BodyPart('forearm-left', [1, 30], [7, 2], './images/forearm-left.png', this.logger);
-			leftArm.addChild(leftForeArm);
-
-			// left hand: 10x14
-			var leftHand = new BodyPart('hand-left', [2, 21], [5, 0], './images/hand-left.png', this.logger);
-			leftForeArm.addChild(leftHand);
-
-			// right arm: 16x32
-			var rightArm = new BodyPart('arm-right', [3, 0], [8, 3], './images/arm-right.png', this.logger);
-			torso.addChild(rightArm);
-
-			// left forearm: 14x22
-			var rightForeArm = new BodyPart('forearm-right', [1, 30], [7, 2], './images/forearm-right.png', this.logger);
-			rightArm.addChild(rightForeArm);
-
-			// left hand: 10x14
-			var rightHand = new BodyPart('hand-right', [2, 21], [5, 0], './images/hand-right.png', this.logger);
-			rightForeArm.addChild(rightHand);
-
-			// left thigh: 14x22
-			var leftThigh = new BodyPart('thigh-left', [3, 13], [2, 2], './images/thigh-left.png', this.logger);
-			hips.addChild(leftThigh);
-
-			// left forearm: 14x22
-			var leftLeg = new BodyPart('leg-left', [1, 30], [7, 2], './images/leg-left.png', this.logger);
-			leftThigh.addChild(leftLeg);
-
-			// left foot: 27x10
-			var leftFoot = new BodyPart('foot-left', [1, 21], [5, 0], './images/foot-left.png', this.logger);
-			leftLeg.addChild(leftFoot);
-
-			// right thigh: 14x22
-			var rightThigh = new BodyPart('thigh-right', [3, 13], [2, 2], './images/thigh-right.png', this.logger);
-			hips.addChild(rightThigh);
-
-			// right forearm: 14x22
-			var rightLeg = new BodyPart('leg-right', [1, 30], [7, 2], './images/leg-right.png', this.logger);
-			rightThigh.addChild(rightLeg);
-
-			// right foot: 27x10
-			var rightFoot = new BodyPart('foot-right', [1, 21], [5, 0], './images/foot-right.png', this.logger);
-			rightLeg.addChild(rightFoot);
+				parentPart.addChild(childPart);
+			}
 		}
 	}, {
 		key: 'forEachPart',

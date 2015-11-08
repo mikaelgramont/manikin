@@ -25,7 +25,7 @@ Logger.prototype.groupEnd = function() {
 	}
 }
 let logger = new Logger();
-let manikin = new Body(window.appConfig.bodyName, [300, 300], logger);
+let manikin = new Body(window.appConfig.bodyName, [300, 300], window.bodyConfig, logger);
 
 let ctx = document.getElementById('manikin').getContext('2d');
 ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
