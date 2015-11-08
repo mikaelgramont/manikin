@@ -158,118 +158,114 @@
 				},
 			}
 		};
-		var appConfig = {
-			animation: {
-				// The number of frames in the animation
-				duration: 2,
-				// Whether to loop at the end. Frame rate and loop count are UI settings.
-				looping: 1,
-				// An object holding an entry for all parts of the body.
-				// TEST: Must be 1-1 match b/w body content and config
-				frames: {
-					// The name of the part in the body hierarchy
-					'root': {
-						// A list of kvp's between frame id and rotation (in degrees).
-						// TEST: Keyframe ids must be lower than number of frames in animation.
-						rotation: {
-							0: 0,
-							1: 0,
-							// Since there are 20 frames and the anim is looping,
-							// we duplicate 0, and use that as frame 21 for calculations,
-							// but we drop it from the replay and instead go back to 0.
-						}
+		var animationConfig = {
+			// The number of frames in the animation
+			duration: 2,
+			// Whether to loop at the end. Frame rate and loop count are UI settings.
+			looping: 1,
+			// An object holding an entry for all parts of the body.
+			// TEST: Must be 1-1 match b/w body content and config
+			frames: {
+				// The name of the part in the body hierarchy
+				'root': {
+					// A list of kvp's between frame id and rotation (in degrees).
+					// TEST: Keyframe ids must be lower than number of frames in animation.
+					rotation: {
+						0: 0,
+						// Since there are 20 frames and the anim is looping,
+						// we duplicate 0, and use that as frame 21 for calculations,
+						// but we drop it from the replay and instead go back to 0.
+					}
+				},
+				'hips': {
+					rotation: {
+						0: 0,
 					},
-					'hips': {
-						rotation: {
-							0: 0,
-							1: 0,
-						},
+				},
+				'torso': {
+					rotation: {
+						0: 10,
+						2: 10,
 					},
-					'torso': {
-						rotation: {
-							0: 0,
-							1: 10,
-						},
-					},					
-					'head':{
-						rotation: {
-							0: 0,
-							1: -10,
-						},
+				},					
+				'head':{
+					rotation: {
+						0: -10,
+						2: -10,
 					},
-					'thigh-left': {
-						rotation: {
-							0: 0,
-							1: 20,
-						},
+				},
+				'thigh-left': {
+					rotation: {
+						0: 20,
+						2: -20,
 					},
-					'leg-left': {
-						rotation: {
-							0: 0,
-							1: 20,
-						},
+				},
+				'leg-left': {
+					rotation: {
+						0: 20,
+						2: -10,
 					},
-					'foot-left': {
-						rotation: {
-							0: 0,
-							1: -30,
-						},
+				},
+				'foot-left': {
+					rotation: {
+						0: -30,
+						2: -5,
 					},
-					'thigh-right': {
-						rotation: {
-							0: 0,
-							1: -20,
-						},
+				},
+				'thigh-right': {
+					rotation: {
+						0: -20,
+						2: 20,
 					},
-					'leg-right': {
-						rotation: {
-							0: 0,
-							1: -10,
-						},
+				},
+				'leg-right': {
+					rotation: {
+						0: -10,
+						2: 20,
 					},
-					'foot-right': {
-						rotation: {
-							0: 0,
-							1: -5,
-						},
+				},
+				'foot-right': {
+					rotation: {
+						0: -5,
+						2: -30,
 					},
-					'arm-left': {
-						rotation: {
-							0: 0,
-							1: -30,
-						},
+				},
+				'arm-left': {
+					rotation: {
+						0: -30,
+						2: 40,
 					},
-					'forearm-left': {
-						rotation: {
-							0: 0,
-							1: -30,
-						},
+				},
+				'forearm-left': {
+					rotation: {
+						0: -30,
+						2: -25,
 					},
-					'hand-left': {
-						rotation: {
-							0: 0,
-							1: -10,
-						},
+				},
+				'hand-left': {
+					rotation: {
+						0: -10,
+						2: 10,
 					},
-					'arm-right': {
-						rotation: {
-							0: 0,
-							1: 40,
-						},
+				},
+				'arm-right': {
+					rotation: {
+						0: 40,
+						2: -30,
 					},
-					'forearm-right': {
-						rotation: {
-							0: 0,
-							1: -25,
-						},
+				},
+				'forearm-right': {
+					rotation: {
+						0: -25,
+						2: -30,
 					},
-					'hand-right': {
-						rotation: {
-							0: 0,
-							1: 10,
-						},
-					}					
-				}
+				},
+				'hand-right': {
+					rotation: {
+						0: 10,
+						2: -10,
+					},
+				}					
 			}
 		};
 	</script>

@@ -37,31 +37,13 @@ function drawGrid(ctx) {
 }
 
 function render(frameId) {
-	manikin.loadAnimation(window.appConfig.animation);
+	manikin.loadAnimation(window.animation);
 	manikin.calculateFrames();
 	manikin.renderFrame(frameId || 0, ctx);	
-}
-
-function observeNested(obj, callback) {
-	for(let prop in obj) {
-		if (!obj.hasOwnProperty(prop)) {
-			continue;
-		}
-		if (obj[prop] === null) {
-			continue;
-		}
-		if (typeof obj[prop] === 'object') {
-		    Object.observe(obj[prop], function(changes){
-		        callback();
-		    });
-			observeNested(obj[prop], callback);
-		}
-	}
 }
 
 window.logger = logger;
 window.render = render;
 window.manikin = manikin;
 
-observeNested(window.appConfig, render);
 drawGrid(gridCtx);
