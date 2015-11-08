@@ -4,15 +4,22 @@ let ProxyDebugger = require('./proxydebugger');
 
 let logger = new Logger();
 logger.enabled = false;
+
+// Set to true to see all canvas calls.
+let instrumentContext = false;
+
 let manikin = new Body('default', 'default', [100, 100], logger);
 
 let gridCtx = document.getElementById('grid').getContext('2d');
 let ctx = document.getElementById('manikin').getContext('2d');
-// ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
-// 	'rotate': (argsIn) => {
-// 		return [argsIn[0] * 180 / Math.PI]
-// 	}
-// });
+if (instrumentContext) {
+	ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
+		'rotate': (argsIn) => {
+			// Print angles in degrees.
+			return [argsIn[0] * 180 / Math.PI]
+		}
+	});
+}
 
 function drawGrid(ctx) {
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -42,6 +49,10 @@ function render(frameId) {
 	manikin.renderFrame(frameId || 0, ctx);	
 }
 
+document.getElementById('frame-id').addEventListener('input', (e) => {
+	render(e.target.value);
+});
+
 window.go = () => {
 	var i = 0;	
 	var fps = 1;
@@ -55,7 +66,6 @@ window.go = () => {
 		}
 	}
 	let handle = setTimeout(anim, 1 / fps * 1000);
-	window.handle = handle;
 }
 
 window.logger = logger;

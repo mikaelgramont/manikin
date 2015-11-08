@@ -1,42 +1,7 @@
 <html>
 <head>
 	<title>Manikin</title>
-	<style>
-		body {
-			background: #eee;
-		}
-		main {
-			height: 100%;
-			/*display: flex;*/
-			justify-content: center;
-			align-items: center;
-		}
-		#canvas-container {
-			width: 200px;
-			height: 200px;
-			position: relative;
-		}
-		.renderer {
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;			
-		}
-		#grid {
-			z-index: 1;
-		}
-		#manikin {
-			z-index: 2;
-			outline: 1px solid #333;
-		}
-		#images {
-			display: none;
-		}
-		h1 {
-			font-family: helvetica;
-		}
-	</style>
+	<link rel="stylesheet" media="all" href="./styles/styles.css">
 </head>
 <body>
 	<header>
@@ -48,8 +13,14 @@
 			<canvas id="manikin" class="renderer" width="200" height="200"></canvas>
 		</div>
 		<div class="action-container">
-		<label for="frame-id">Frame #</label>
-		<input type="range" id="frame-id" min="0">
+			<p class="action-row">
+				<input type="range" class="action" id="frame-id" aria-label="Current frame id" min="0" max="39" value="0">
+			</p>
+			<p class="action-row distribute">
+				<button id="prev" class="action" aria-label="Previous frame">&lt;</button>
+				<input id="frame-id-value" class="action" aria-label="Current frame id" value="0" type="text">
+				<button id="next" class="action" aria-label="Next frame">&gt;</button>
+			</p>
 		</div>
 	</main>
 	<div id="images"></div>

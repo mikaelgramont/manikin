@@ -1,0 +1,64 @@
+body {
+	background: #eee;
+}
+h1 {
+	font-family: helvetica;
+}
+
+p, ul {
+	margin: 0;
+	padding: 0;
+}
+
+main {
+	width: 200px;
+}
+
+#canvas-container {
+	width: 200px;
+	height: 200px;
+	position: relative;
+}
+.renderer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;			
+}
+#grid {
+	z-index: 1;
+}
+#manikin {
+	z-index: 2;
+	outline: 1px solid #333;
+}
+#images {
+	display: none;
+}
+
+.action-row {
+	margin: 10px 0;
+}
+
+.action-row input[type=range] {
+	width: 100%;
+	position: relative;
+	left: -2px;
+}
+
+.action-row input[type=text] {
+	text-align: center;
+}
+
+.action-row button {
+	padding: 10px;
+}
+
+.action-row.distribute {
+	display: flex;
+}
+
+.action-row.distribute .action {
+	flex-grow: 1;
+}
