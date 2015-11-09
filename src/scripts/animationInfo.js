@@ -30,10 +30,12 @@ class AnimationInfo {
 
 			if (nextId >= this.duration - 1) {
 				nextId = 0;
+				nextKeyFrameValue = this.rotation[nextId];
 				break;
 			}
+
+			nextKeyFrameValue = this.rotation[nextId];
 		} 
-		nextKeyFrameValue = this.rotation[nextId];
 
 		// 3. Return the interpolated value.
 		let ratio;

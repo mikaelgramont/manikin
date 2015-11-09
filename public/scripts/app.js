@@ -41,10 +41,12 @@ var AnimationInfo = (function () {
 
 				if (nextId >= this.duration - 1) {
 					nextId = 0;
+					nextKeyFrameValue = this.rotation[nextId];
 					break;
 				}
+
+				nextKeyFrameValue = this.rotation[nextId];
 			}
-			nextKeyFrameValue = this.rotation[nextId];
 
 			// 3. Return the interpolated value.
 			var ratio = undefined;
@@ -75,7 +77,7 @@ logger.enabled = false;
 // Set to true to see all canvas calls.
 var instrumentContext = false;
 
-var manikin = new Body('default', 'default', [100, 100], logger);
+var manikin = new Body('default', 'default', [100, 97], logger);
 
 var gridCtx = document.getElementById('grid').getContext('2d');
 var ctx = document.getElementById('manikin').getContext('2d');
@@ -111,7 +113,6 @@ function drawGrid(ctx) {
 }
 
 function render(frameId) {
-	console.log('rendering ' + frameId);
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	manikin.renderFrame(frameId || 0, ctx);
 }
@@ -122,17 +123,27 @@ document.getElementById('frame-id').addEventListener('input', function (e) {
 
 window.go = function () {
 	var i = 0;
-	var fps = 1;
-	function anim() {
+	var fps = 30;
+	var frameDuration = 1 / fps * 1000;
+	var start = null;
+	function anim(timestamp) {
+		if (!start) {
+			start = timestamp;
+		}
+		var progress = timestamp - start;
+		if (progress > frameDuration) {
+			start = timestamp;
+			i++;
+		}
+
 		render(i % 40);
-		i++;
 		if (i <= 400) {
-			handle = setTimeout(anim, 1 / fps * 1000);
+			handle = requestAnimationFrame(anim);
 		} else {
-			clearTimeout(handle);
+			cancelAnimationFrame(handle);
 		}
 	}
-	var handle = setTimeout(anim, 1 / fps * 1000);
+	var handle = requestAnimationFrame(anim);
 };
 
 window.logger = logger;

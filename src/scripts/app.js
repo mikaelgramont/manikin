@@ -8,7 +8,7 @@ logger.enabled = false;
 // Set to true to see all canvas calls.
 let instrumentContext = false;
 
-let manikin = new Body('default', 'default', [100, 100], logger);
+let manikin = new Body('default', 'default', [100, 97], logger);
 
 let gridCtx = document.getElementById('grid').getContext('2d');
 let ctx = document.getElementById('manikin').getContext('2d');
@@ -44,7 +44,6 @@ function drawGrid(ctx) {
 }
 
 function render(frameId) {
-	console.log('rendering ' + frameId)
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	manikin.renderFrame(frameId || 0, ctx);	
 }
@@ -54,18 +53,28 @@ document.getElementById('frame-id').addEventListener('input', (e) => {
 });
 
 window.go = () => {
-	var i = 0;	
-	var fps = 1;
-	function anim(){
+	var i = 0;
+	var fps = 30;
+	var frameDuration = 1 / fps * 1000;
+	var start = null
+	function anim(timestamp) {
+		if (!start) {
+			start = timestamp;
+		}
+  		var progress = timestamp - start;
+		if (progress > frameDuration) {
+			start = timestamp;
+			i++;
+		}
+
 		render(i % 40);
-		i++;
 		if (i <= 400) {
-			handle = setTimeout(anim, 1 / fps * 1000);
+			handle = requestAnimationFrame(anim);
 		} else {
-			clearTimeout(handle);
+			cancelAnimationFrame(handle);
 		}
 	}
-	let handle = setTimeout(anim, 1 / fps * 1000);
+	let handle = requestAnimationFrame(anim);
 }
 
 window.logger = logger;

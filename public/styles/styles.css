@@ -57,6 +57,7 @@ main {
 
 .action-row.distribute {
 	display: flex;
+	align-items: center;
 }
 
 .action-row.distribute .action {

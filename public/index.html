@@ -5,7 +5,7 @@
 </head>
 <body>
 	<header>
-		<h1>Manikin</h1>
+		<h1>Manikin 2015</h1>
 	</header>
 	<main>
 		<div id="canvas-container">
@@ -15,6 +15,14 @@
 		<div class="action-container">
 			<p class="action-row">
 				<input type="range" class="action" id="frame-id" aria-label="Current frame id" min="0" max="39" value="0">
+			</p>
+			<p class="action-row distribute">
+				<button onclick="javascript:go()">Play</button>
+				<button>Stop</button>
+				<label>
+					<input type="checkbox" checked>
+					Loop
+				</label>
 			</p>
 			<p class="action-row distribute">
 				<button id="prev" class="action" aria-label="Previous frame">&lt;</button>
