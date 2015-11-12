@@ -40,7 +40,8 @@ Add possibility to listen to keyframe events to react to them while playing.
 
 Load spritesheets, not individual images:
 
-- body config can list a sprite in each part config or list a spritesheet in the root and then coordinates in body parts. Each part will attempt to get the root spritesheet when inspecting coordinates (Need a way to get to root from each part).
+- body config can list a sprite in each part config or list a spritesheet in the root and then coordinates in body parts. Each part will attempt to get the root spritesheet when inspecting coordinates.
+https://draeton.github.io/stitches/
 
 On page load, give a list of all the bodies and animations available.
 On selection of a body, check all the animations for compatibility

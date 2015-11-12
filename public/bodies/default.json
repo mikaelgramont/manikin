@@ -5,112 +5,112 @@
 			"parentName": null,
 			"relativePosition": [-10, 0],
 			"centerOffset": [11, 7],
-			"sprite": null,
+			"sprite": "./bodies/default.png",
 			"layer": 1
 		},
 		"hips": {
 			"parentName": "root",
 			"relativePosition": [0, 0],
 			"centerOffset": [11, 7],
-			"sprite": "./images/hips.png",
+			"sprite": [89, 69, 22, 15],
 			"layer": 1
 		},
 		"torso": {
 			"parentName": "hips",
 			"relativePosition": [0, -39],
 			"centerOffset": [11, 39],
-			"sprite": "./images/torso.png",
+			"sprite": [57, 94, 22, 39],
 			"layer": 1
 		},
 		"head": {
 			"parentName": "torso",
 			"relativePosition": [0, -29],
 			"centerOffset": [11, 28],
-			"sprite": "./images/head.png",
+			"sprite": [57, 45, 22, 29],
 			"layer": 1
 		},
 		"arm-left": {
 			"parentName": "torso",
 			"relativePosition": [3, 0],
 			"centerOffset": [8, 3],
-			"sprite": "./images/arm-left.png",
+			"sprite": [5, 5, 16, 32],
 			"layer": 0
 		},
 		"forearm-left": {
 			"parentName": "arm-left",
 			"relativePosition": [1, 30],
 			"centerOffset": [7, 2],
-			"sprite": "./images/forearm-left.png",
+			"sprite": [94, 5, 14, 22],
 			"layer": 0
 		},
 		"hand-left": {
 			"parentName": "forearm-left",
 			"relativePosition": [2, 21],
 			"centerOffset": [5, 0],
-			"sprite": "./images/hand-left.png",
+			"sprite": [25, 69, 10, 14],
 			"layer": 0
 		},
 		"arm-right": {
 			"parentName": "torso",
 			"relativePosition": [3, 0],
 			"centerOffset": [8, 3],
-			"sprite": "./images/arm-right.png",
+			"sprite": [31, 5, 16, 32],
 			"layer": 2
 		},
 		"forearm-right": {
 			"parentName": "arm-right",
 			"relativePosition": [1, 30],
 			"centerOffset": [7, 2],
-			"sprite": "./images/forearm-right.png",
+			"sprite": [94, 37, 14, 22],
 			"layer": 2
 		},
 		"hand-right": {
 			"parentName": "forearm-right",
 			"relativePosition": [2, 21],
 			"centerOffset": [5, 0],
-			"sprite": "./images/hand-right.png",
+			"sprite": [25, 69, 10, 14],
 			"layer": 2
 		},
 		"thigh-left": {
 			"parentName": "hips",
 			"relativePosition": [3, 13],
 			"centerOffset": [2, 2],
-			"sprite": "./images/thigh-left.png",
+			"sprite": [5, 94, 16, 32],
 			"layer": 0
 		},
 		"leg-left": {
 			"parentName": "thigh-left",
 			"relativePosition": [1, 30],
 			"centerOffset": [7, 2],
-			"sprite": "./images/leg-left.png",
+			"sprite": [118, 5, 14, 22],
 			"layer": 0
 		},
 		"foot-left": {
 			"parentName": "leg-left",
 			"relativePosition": [1, 21],
 			"centerOffset": [5, 0],
-			"sprite": "./images/foot-left.png",
+			"sprite": [57, 5, 27, 10],
 			"layer": 0
 		},
 		"thigh-right": {
 			"parentName": "hips",
 			"relativePosition": [3, 13],
 			"centerOffset": [2, 2],
-			"sprite": "./images/thigh-right.png",
+			"sprite": [31, 94, 16, 32],
 			"layer": 2
 		},
 		"leg-right": {
 			"parentName": "thigh-right",
 			"relativePosition": [1, 30],
 			"centerOffset": [7, 2],
-			"sprite": "./images/leg-right.png",
+			"sprite": [118, 37, 14, 22],
 			"layer": 2
 		},
 		"foot-right": {
 			"parentName": "leg-right",
 			"relativePosition": [1, 21],
 			"centerOffset": [5, 0],
-			"sprite": "./images/foot-right.png",
+			"sprite": [57, 25, 27, 10],
 			"layer": 2
 		}
 	}

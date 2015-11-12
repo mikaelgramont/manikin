@@ -1,7 +1,7 @@
 let AnimationInfo = require('./animationInfo');
 
 class BodyPart {
-	constructor(name, relativePosition, centerOffset, sprite, layer, logger) {
+	constructor(name, isRoot, relativePosition, centerOffset, sprite, layer, logger) {
 		this.name = name;
 
 		// Vector going from parent to this part.
@@ -12,7 +12,8 @@ class BodyPart {
 
 		this.layer = layer;
 
-		if (sprite) {
+		if (typeof sprite === "string") {
+			// Individual sprite
 			let img = document.createElement('img');
 			img.src = sprite;
 			img.addEventListener('load', (e) => {
@@ -21,12 +22,15 @@ class BodyPart {
 			document.getElementById('images').appendChild(img);
 			this.sprite = img;		
 		} else {
-			this.sprite = null;
+			// Store dimensions, we'll refer to root for the image.
+			this.sprite = sprite;
 		}
 
 		this.logger = logger;
 
 		this.parent = null;
+		this.isRoot = isRoot;
+		this.root = null;
 		this.children = {};
 		
 		this.animationInfo = null;
@@ -36,11 +40,18 @@ class BodyPart {
 
 	setParent(parent) {
 		this.parent = parent;
+		this.root = parent.getRoot();
 	}
 
-	// Look into ES6 setters/getters
 	getParent() {
 		return this.parent;
+	}
+
+	getRoot() {
+		if (this.isRoot) {
+			return this;
+		}
+		return this.root;
 	}
 
 	getName() {
@@ -55,7 +66,7 @@ class BodyPart {
 		return this.children[name];
 	}
 
-	addChild(child) {
+	addChild(child) {		
 		let childName = child.getName();
 		child.setParent(this);
 		if (this.children[childName]) {
@@ -155,7 +166,12 @@ class BodyPart {
 		ctx.translate(this.centerOffset[0], this.centerOffset[1]);
 		ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 		ctx.translate(- this.centerOffset[0], - this.centerOffset[1]);
-		ctx.drawImage(this.sprite, 0, 0);
+		if (typeof this.sprite === "string") {
+			ctx.drawImage(this.sprite, 0, 0);
+		} else {
+			let sprite = this.getRoot().sprite;
+			ctx.drawImage(sprite, this.sprite[0], this.sprite[1], this.sprite[2], this.sprite[3], 0, 0, this.sprite[2], this.sprite[3]);
+		}
 	}
 }
 module.exports = BodyPart;

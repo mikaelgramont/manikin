@@ -62,16 +62,18 @@ class Body {
 		let parts = {};
 		// Step 1: build all parts.
 		for (let partName in this.bodyConfig.parts) {
+			let isRoot = partName == 'root';
 			let partConfig = this.bodyConfig.parts[partName];
 			parts[partName] = new BodyPart(
 				partName,
+				isRoot,
 				partConfig.relativePosition,
 				partConfig.centerOffset,
 				partConfig.sprite,
 				partConfig.layer,
 				this.logger);
 
-			if (partName == 'root') {
+			if (isRoot) {
 				this.root = parts[partName];
 			}
 		}

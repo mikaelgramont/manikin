@@ -230,10 +230,11 @@ var Body = (function () {
 			var parts = {};
 			// Step 1: build all parts.
 			for (var partName in this.bodyConfig.parts) {
+				var isRoot = partName == 'root';
 				var partConfig = this.bodyConfig.parts[partName];
-				parts[partName] = new BodyPart(partName, partConfig.relativePosition, partConfig.centerOffset, partConfig.sprite, partConfig.layer, this.logger);
+				parts[partName] = new BodyPart(partName, isRoot, partConfig.relativePosition, partConfig.centerOffset, partConfig.sprite, partConfig.layer, this.logger);
 
-				if (partName == 'root') {
+				if (isRoot) {
 					this.root = parts[partName];
 				}
 			}
@@ -372,7 +373,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var AnimationInfo = require('./animationInfo');
 
 var BodyPart = (function () {
-	function BodyPart(name, relativePosition, centerOffset, sprite, layer, logger) {
+	function BodyPart(name, isRoot, relativePosition, centerOffset, sprite, layer, logger) {
 		var _this = this;
 
 		_classCallCheck(this, BodyPart);
@@ -387,7 +388,8 @@ var BodyPart = (function () {
 
 		this.layer = layer;
 
-		if (sprite) {
+		if (typeof sprite === "string") {
+			// Individual sprite
 			var img = document.createElement('img');
 			img.src = sprite;
 			img.addEventListener('load', function (e) {
@@ -396,12 +398,15 @@ var BodyPart = (function () {
 			document.getElementById('images').appendChild(img);
 			this.sprite = img;
 		} else {
-			this.sprite = null;
+			// Store dimensions, we'll refer to root for the image.
+			this.sprite = sprite;
 		}
 
 		this.logger = logger;
 
 		this.parent = null;
+		this.isRoot = isRoot;
+		this.root = null;
 		this.children = {};
 
 		this.animationInfo = null;
@@ -413,13 +418,20 @@ var BodyPart = (function () {
 		key: 'setParent',
 		value: function setParent(parent) {
 			this.parent = parent;
+			this.root = parent.getRoot();
 		}
-
-		// Look into ES6 setters/getters
 	}, {
 		key: 'getParent',
 		value: function getParent() {
 			return this.parent;
+		}
+	}, {
+		key: 'getRoot',
+		value: function getRoot() {
+			if (this.isRoot) {
+				return this;
+			}
+			return this.root;
 		}
 	}, {
 		key: 'getName',
@@ -551,7 +563,12 @@ var BodyPart = (function () {
 			ctx.translate(this.centerOffset[0], this.centerOffset[1]);
 			ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 			ctx.translate(-this.centerOffset[0], -this.centerOffset[1]);
-			ctx.drawImage(this.sprite, 0, 0);
+			if (typeof this.sprite === "string") {
+				ctx.drawImage(this.sprite, 0, 0);
+			} else {
+				var sprite = this.getRoot().sprite;
+				ctx.drawImage(sprite, this.sprite[0], this.sprite[1], this.sprite[2], this.sprite[3], 0, 0, this.sprite[2], this.sprite[3]);
+			}
 		}
 	}]);
 
