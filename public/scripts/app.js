@@ -132,7 +132,7 @@ window.go = function () {
 		}
 		var progress = timestamp - start;
 		if (progress > frameDuration) {
-			start = timestamp;
+			start -= frameDuration;
 			i++;
 		}
 

@@ -1,72 +1,57 @@
-- for a given frame, go through the hierarchy and calculate the position of the anchor point (let's assume we don't know anything about what's being drawn, just positions) and rotation for each body part.
+# High-level things to build
 
-let frameInfo = {
-	root: {
-		position: [200, 200]
-		rotation: 0
-	},
-	hips: {
-		position: [0, 0]	// relative to parent (root)
-		rotation: 0
-	},
-	torso: {
-		position: [0, -80]
-		rotation: 0
-	},
-	'left-arm': {
-		position: [0, 5]
-		rotation: 45
-	},
-	'left-forearm': {
-		position: [0, 40]
-		rotation: 25
-	},
-}
+## Body creator
+
+This will allow to build the tree of body parts.
+Maybe use SVG for easy DOM manipulation for things like drag & drop.
+Loads individual images for each body part, generates a spritesheet.
+Outputs a body.json.
+
+Will need a view to create the tree, and another one for positioning of parts. Need to be able to move parts around, and set the rotation center. Toggles for visibility because front layers might obfuscate back layers.
+
+Steps:
+
+- load an existing file
+- create a representation: http://bl.ocks.org/mbostock/4339184
+- need to accomodate creation and deletion of children parts, maybe copying too.
+- creation of part involves picking an image out of a list (loaded on page load).
+- need a new canvas to show parent part with the currently selected part on top
+- show a representation of the json file
 
 
+## Animation creator
+
+This will load a body.json, and create an animation.json
+Render another canvas with a color per body part. Clicking on the real canvas triggers a color lookup in the other one, and with a color-to-part map, we can determine which part is selected.
+
+Animations can emit certain events with data (sound, visual effect) on marked keyframes.
+
+## Animation player
+
+Loads a body.json, an animation.json and one single spritesheet.
+Plays one (maybe) looping animation.
+Available in an iframe for distribution.
+Can export animation into one image file (or a video file via backend - needs to run on node). Files are named manikin-animation-walk-80x64.png, where 80x64 is the size of each cell. Export may need things like optional padding, cropping.
+
+Add possibility to listen to keyframe events to react to them while playing.
 
 
+# Implementation
+
+Load spritesheets, not individual images:
+
+- body config can list a sprite in each part config or list a spritesheet in the root and then coordinates in body parts. Each part will attempt to get the root spritesheet when inspecting coordinates (Need a way to get to root from each part).
+
+On page load, give a list of all the bodies and animations available.
+On selection of a body, check all the animations for compatibility
 
 
+# Questions and things to explore
 
-
+- Integration of ES6, Jasmine and watch-bundling
 - How to pass data between parent page (index.html) and a Babel-compiled ES6 bundle or between bundles?
 
-
-Use http://www.pixijs.com/
-
-ES6 compilation resources:
+# ES6 compilation resources:
 
 - https://gist.github.com/danharper/3ca2273125f500429945
 - https://github.com/ampproject/amphtml/blob/master/gulpfile.js
-
-Animation setup
-- center is set once and for all
-- rotations are defined once per frame.
-- frames are interpolated between keyframes.
-
-
-for each frame:
-- interpolate rotation values from the last keyframe before using them
-- from root, BFS over all children (including root) and for each child:
-	- calculate child pos and rotation based on parent and child settings in the current frame
-=> We end up with calculations for each frame, nothing stored. Image rotations can be baked before running the animation (like K&P). They can be stored on separate canvases in order to give the user a chance to redraw them. This wil complicate things a lot because we need to store an array of images instead of one that we rotate on the fly.
-
-
-each part needs to be have:
-- an image
-- an offset from the parent
-
-animation config (json):
-rotation about a point:
-	If you rotate point (px, py) around point (ox, oy) by angle theta you'll get:
-	p'x = cos(theta) * (px-ox) - sin(theta) * (py-oy) + ox
-	p'y = sin(theta) * (px-ox) + cos(theta) * (py-oy) + oy
-
-	let r = parent.rotation;
-	let pp = parent.rotation;
-	let cp = child.position;
-	child.position.x = Math.cos(r) * (cp.x - pp.x) - Math.sin(r) * (cp.y - pp.y) + pp.x;
-	child.position.y = Math.sin(r) * (cp.x - pp.x) + Math.cos(r) * (cp.y - pp.y) + pp.y;
-
-
