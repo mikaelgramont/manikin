@@ -17,6 +17,7 @@ Steps:
 - creation of part involves picking an image out of a list (loaded on page load).
 - need a new canvas to show parent part with the currently selected part on top
 - show a representation of the json file
+- sprite creation: https://draeton.github.io/stitches/
 
 
 ## Animation creator
@@ -38,10 +39,6 @@ Add possibility to listen to keyframe events to react to them while playing.
 
 # Implementation
 
-Load spritesheets, not individual images:
-
-- body config can list a sprite in each part config or list a spritesheet in the root and then coordinates in body parts. Each part will attempt to get the root spritesheet when inspecting coordinates.
-https://draeton.github.io/stitches/
 
 On page load, give a list of all the bodies and animations available.
 On selection of a body, check all the animations for compatibility

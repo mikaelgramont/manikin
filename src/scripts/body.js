@@ -5,7 +5,7 @@ const ANIMATIONS_PATH = './animations';
 const BODIES_PATH = './bodies';
 
 class Body {
-	constructor(bodyConfigFilename, animationConfigFilename, absolutePosition, logger) {
+	constructor(bodyConfigFilename, animationConfigFilename, absolutePosition, logger, afterReady) {
 
 		this.absolutePosition = absolutePosition;
 		this.logger = logger;
@@ -20,7 +20,7 @@ class Body {
 		promises.push(this.jsonLoadPromiseFactory(
 			`${ANIMATIONS_PATH}/${animationConfigFilename}.json`, this.setAnimationConfig));
 
-		Promise.all(promises).then(this.onReady.bind(this));
+		Promise.all(promises).then(this.onReady.bind(this)).then(afterReady);
 	}
 
 	onReady() {
@@ -140,6 +140,10 @@ class Body {
 			}
 			part.loadAnimationInfo(this.duration, animObject.frames[name]);
 		});
+	}
+
+	getAnimationDuration() {
+		return this.duration;
 	}
 
 	calculateFrames() {

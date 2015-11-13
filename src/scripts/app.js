@@ -1,16 +1,30 @@
+let AnimationRenderer = require('./animationrenderer');
 let Body = require('./body');
+let Grid = require('./grid');
 let Logger = require('./logger');
 let ProxyDebugger = require('./proxydebugger');
+let Scheduler = require('./scheduler');
+let Utils = require('./utils');
 
-let logger = new Logger();
+let global = Utils.getGlobalObject();
+
+let logger = new Logger(global);
 logger.enabled = false;
 
 // Set to true to see all canvas calls.
 let instrumentContext = false;
 
-let manikin = new Body('default', 'default', [100, 97], logger);
+// Prepare grid.
+Grid.drawGrid(document.getElementById('grid').getContext('2d'), logger);
 
-let gridCtx = document.getElementById('grid').getContext('2d');
+let elements = {
+	playBtn: document.getElementById('play-button'),
+	stopBtn: document.getElementById('stop-button'),
+	frameSlider: document.getElementById('frame-id'),
+	fps: document.getElementById('fps'),
+}
+
+// Possibly instrument the main context oject.
 let ctx = document.getElementById('manikin').getContext('2d');
 if (instrumentContext) {
 	ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
@@ -21,64 +35,47 @@ if (instrumentContext) {
 	});
 }
 
-function drawGrid(ctx) {
-	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	logger.groupCollapsed('Drawing grid');
-	for (let i = 0; i <= 200; i += 10) {
-		let strokeStyle = '#000000';
-		if (i == 100) {
-			strokeStyle = '#ff0000';
+// Build the body object.
+let body = new Body('default', 'default', [100, 97], logger, () => {
+	let frameRenderFn = (frameId) => {
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		body.renderFrame(frameId, ctx);
+		elements.frameSlider.value = frameId;
+	};
+
+	let duration = body.getAnimationDuration();
+	elements.frameSlider.max = duration - 1;
+	let animationRenderer = new AnimationRenderer(duration, frameRenderFn);
+
+	let schedulerLogger = new Logger(global);
+	schedulerLogger.enabled = false;
+	let scheduler = new Scheduler(
+		[animationRenderer.nextFrame.bind(animationRenderer)],
+		schedulerLogger, elements.fps.value);
+
+	elements.playBtn.addEventListener('click', () => {
+		elements.playBtn.classList.toggle('hidden');
+		elements.stopBtn.classList.toggle('hidden');
+		scheduler.run();
+	});
+	elements.stopBtn.addEventListener('click', () => {
+		elements.playBtn.classList.toggle('hidden');
+		elements.stopBtn.classList.toggle('hidden');
+		scheduler.stop();
+	});
+	elements.frameSlider.addEventListener('input', (e) => {
+		scheduler.stop();
+		frameRenderFn(e.currentTarget.value);
+		animationRenderer.setFrameId(e.currentTarget.value);
+	});
+	elements.fps.addEventListener('focus', () => {
+		elements.fps.setSelectionRange(0, elements.fps.value.length);
+	});
+	elements.fps.addEventListener('keyup', () => {
+		let val = parseInt(elements.fps.value, 10);
+		if (val > 0 && val <= 60) {
+			scheduler.setFps(val);
 		}
-		ctx.strokeStyle = strokeStyle;
-		ctx.beginPath();
-		ctx.moveTo(0, i);
-		ctx.lineTo(200,i);
-		ctx.stroke();
+	})
 
-		ctx.beginPath();
-		ctx.moveTo(i, 0);
-		ctx.lineTo(i, 200);
-		ctx.stroke();
-	}
-	logger.groupEnd('Drawing grid');
-}
-
-function render(frameId) {
-	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	manikin.renderFrame(frameId || 0, ctx);	
-}
-
-document.getElementById('frame-id').addEventListener('input', (e) => {
-	render(e.target.value);
 });
-
-window.go = () => {
-	var i = 0;
-	var fps = 30;
-	var frameDuration = 1 / fps * 1000;
-	var start = null
-	function anim(timestamp) {
-		if (!start) {
-			start = timestamp;
-		}
-  		var progress = timestamp - start;
-		if (progress > frameDuration) {
-			start -= frameDuration;
-			i++;
-		}
-
-		render(i % 40);
-		if (i <= 400) {
-			handle = requestAnimationFrame(anim);
-		} else {
-			cancelAnimationFrame(handle);
-		}
-	}
-	let handle = requestAnimationFrame(anim);
-}
-
-window.logger = logger;
-window.render = render;
-window.manikin = manikin;
-
-drawGrid(gridCtx);

@@ -65,21 +65,74 @@ var AnimationInfo = (function () {
 module.exports = AnimationInfo;
 
 },{}],2:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var AnimationRenderer = (function () {
+	function AnimationRenderer(duration, renderFn) {
+		_classCallCheck(this, AnimationRenderer);
+
+		this.duration_ = duration;
+		this.renderFn_ = renderFn;
+
+		this.frameId_ = 0;
+	}
+
+	_createClass(AnimationRenderer, [{
+		key: "nextFrame",
+		value: function nextFrame() {
+			this.renderFn_(this.frameId_);
+
+			this.frameId_ += 1;
+			if (this.frameId_ >= this.duration_) {
+				this.frameId_ = 0;
+			}
+		}
+	}, {
+		key: "setFrameId",
+		value: function setFrameId(frameId) {
+			this.frameId_ = frameId;
+		}
+	}]);
+
+	return AnimationRenderer;
+})();
+
+module.exports = AnimationRenderer;
+
+},{}],3:[function(require,module,exports){
 'use strict';
 
+var AnimationRenderer = require('./animationrenderer');
 var Body = require('./body');
+var Grid = require('./grid');
 var Logger = require('./logger');
 var ProxyDebugger = require('./proxydebugger');
+var Scheduler = require('./scheduler');
+var Utils = require('./utils');
 
-var logger = new Logger();
+var global = Utils.getGlobalObject();
+
+var logger = new Logger(global);
 logger.enabled = false;
 
 // Set to true to see all canvas calls.
 var instrumentContext = false;
 
-var manikin = new Body('default', 'default', [100, 97], logger);
+// Prepare grid.
+Grid.drawGrid(document.getElementById('grid').getContext('2d'), logger);
 
-var gridCtx = document.getElementById('grid').getContext('2d');
+var elements = {
+	playBtn: document.getElementById('play-button'),
+	stopBtn: document.getElementById('stop-button'),
+	frameSlider: document.getElementById('frame-id'),
+	fps: document.getElementById('fps')
+};
+
+// Possibly instrument the main context oject.
 var ctx = document.getElementById('manikin').getContext('2d');
 if (instrumentContext) {
 	ctx = ProxyDebugger.instrumentContext(ctx, 'ctx', logger, {
@@ -90,69 +143,49 @@ if (instrumentContext) {
 	});
 }
 
-function drawGrid(ctx) {
-	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	logger.groupCollapsed('Drawing grid');
-	for (var i = 0; i <= 200; i += 10) {
-		var strokeStyle = '#000000';
-		if (i == 100) {
-			strokeStyle = '#ff0000';
+// Build the body object.
+var body = new Body('default', 'default', [100, 97], logger, function () {
+	var frameRenderFn = function frameRenderFn(frameId) {
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		body.renderFrame(frameId, ctx);
+		elements.frameSlider.value = frameId;
+	};
+
+	var duration = body.getAnimationDuration();
+	elements.frameSlider.max = duration - 1;
+	var animationRenderer = new AnimationRenderer(duration, frameRenderFn);
+
+	var schedulerLogger = new Logger(global);
+	schedulerLogger.enabled = false;
+	var scheduler = new Scheduler([animationRenderer.nextFrame.bind(animationRenderer)], schedulerLogger, elements.fps.value);
+
+	elements.playBtn.addEventListener('click', function () {
+		elements.playBtn.classList.toggle('hidden');
+		elements.stopBtn.classList.toggle('hidden');
+		scheduler.run();
+	});
+	elements.stopBtn.addEventListener('click', function () {
+		elements.playBtn.classList.toggle('hidden');
+		elements.stopBtn.classList.toggle('hidden');
+		scheduler.stop();
+	});
+	elements.frameSlider.addEventListener('input', function (e) {
+		scheduler.stop();
+		frameRenderFn(e.currentTarget.value);
+		animationRenderer.setFrameId(e.currentTarget.value);
+	});
+	elements.fps.addEventListener('focus', function () {
+		elements.fps.setSelectionRange(0, elements.fps.value.length);
+	});
+	elements.fps.addEventListener('keyup', function () {
+		var val = parseInt(elements.fps.value, 10);
+		if (val > 0 && val <= 60) {
+			scheduler.setFps(val);
 		}
-		ctx.strokeStyle = strokeStyle;
-		ctx.beginPath();
-		ctx.moveTo(0, i);
-		ctx.lineTo(200, i);
-		ctx.stroke();
-
-		ctx.beginPath();
-		ctx.moveTo(i, 0);
-		ctx.lineTo(i, 200);
-		ctx.stroke();
-	}
-	logger.groupEnd('Drawing grid');
-}
-
-function render(frameId) {
-	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	manikin.renderFrame(frameId || 0, ctx);
-}
-
-document.getElementById('frame-id').addEventListener('input', function (e) {
-	render(e.target.value);
+	});
 });
 
-window.go = function () {
-	var i = 0;
-	var fps = 30;
-	var frameDuration = 1 / fps * 1000;
-	var start = null;
-	function anim(timestamp) {
-		if (!start) {
-			start = timestamp;
-		}
-		var progress = timestamp - start;
-		if (progress > frameDuration) {
-			start -= frameDuration;
-			i++;
-		}
-
-		render(i % 40);
-		if (i <= 400) {
-			handle = requestAnimationFrame(anim);
-		} else {
-			cancelAnimationFrame(handle);
-		}
-	}
-	var handle = requestAnimationFrame(anim);
-};
-
-window.logger = logger;
-window.render = render;
-window.manikin = manikin;
-
-drawGrid(gridCtx);
-
-},{"./body":3,"./logger":5,"./proxydebugger":6}],3:[function(require,module,exports){
+},{"./animationrenderer":2,"./body":4,"./grid":6,"./logger":7,"./proxydebugger":8,"./scheduler":9,"./utils":11}],4:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -166,7 +199,7 @@ var ANIMATIONS_PATH = './animations';
 var BODIES_PATH = './bodies';
 
 var Body = (function () {
-	function Body(bodyConfigFilename, animationConfigFilename, absolutePosition, logger) {
+	function Body(bodyConfigFilename, animationConfigFilename, absolutePosition, logger, afterReady) {
 		_classCallCheck(this, Body);
 
 		this.absolutePosition = absolutePosition;
@@ -180,7 +213,7 @@ var Body = (function () {
 		promises.push(this.jsonLoadPromiseFactory(BODIES_PATH + '/' + bodyConfigFilename + '.json', this.setBodyConfig));
 		promises.push(this.jsonLoadPromiseFactory(ANIMATIONS_PATH + '/' + animationConfigFilename + '.json', this.setAnimationConfig));
 
-		Promise.all(promises).then(this.onReady.bind(this));
+		Promise.all(promises).then(this.onReady.bind(this)).then(afterReady);
 	}
 
 	_createClass(Body, [{
@@ -306,6 +339,11 @@ var Body = (function () {
 			});
 		}
 	}, {
+		key: 'getAnimationDuration',
+		value: function getAnimationDuration() {
+			return this.duration;
+		}
+	}, {
 		key: 'calculateFrames',
 		value: function calculateFrames() {
 			this.forEachPart(function (part) {
@@ -363,7 +401,7 @@ var Body = (function () {
 
 module.exports = Body;
 
-},{"./bodypart":4,"./stack":7}],4:[function(require,module,exports){
+},{"./bodypart":5,"./stack":10}],5:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -577,36 +615,72 @@ var BodyPart = (function () {
 
 module.exports = BodyPart;
 
-},{"./animationInfo":1}],5:[function(require,module,exports){
+},{"./animationInfo":1}],6:[function(require,module,exports){
+'use strict';
+
+var Grid = {
+	drawGrid: function drawGrid(ctx, logger) {
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		logger.groupCollapsed('Drawing grid');
+		for (var i = 0; i <= 200; i += 10) {
+			var strokeStyle = '#000000';
+			if (i == 100) {
+				strokeStyle = '#ff0000';
+			}
+			ctx.strokeStyle = strokeStyle;
+			ctx.beginPath();
+			ctx.moveTo(0, i);
+			ctx.lineTo(200, i);
+			ctx.stroke();
+
+			ctx.beginPath();
+			ctx.moveTo(i, 0);
+			ctx.lineTo(i, 200);
+			ctx.stroke();
+		}
+		logger.groupEnd('Drawing grid');
+	}
+};
+
+module.exports = Grid;
+
+},{}],7:[function(require,module,exports){
 "use strict";
 
-var Logger = function Logger() {
+var Logger = function Logger(global) {
 	this.enabled = true;
+
+	this._logger = global.console || {
+		log: function log() {},
+		group: function group() {},
+		groupCollapsed: function groupCollapsed() {},
+		groupEnd: function groupEnd() {}
+	};
 };
 Logger.prototype.log = function () {
 	if (this.enabled) {
-		console.log.apply(console, arguments);
+		this._logger.log.apply(console, arguments);
 	}
 };
 Logger.prototype.group = function () {
 	if (this.enabled) {
-		console.group.apply(console, arguments);
+		this._logger.group.apply(console, arguments);
 	}
 };
 Logger.prototype.groupCollapsed = function () {
 	if (this.enabled) {
-		console.groupCollapsed.apply(console, arguments);
+		this._logger.groupCollapsed.apply(console, arguments);
 	}
 };
 Logger.prototype.groupEnd = function () {
 	if (this.enabled) {
-		console.groupEnd.apply(console, arguments);
+		this._logger.groupEnd.apply(console, arguments);
 	}
 };
 
 module.exports = Logger;
 
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 
 var ProxyDebugger = {
@@ -652,7 +726,93 @@ var ProxyDebugger = {
 
 module.exports = ProxyDebugger;
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
+'use strict';
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+var DEFAULT_FPS = 30;
+
+var STOPPED = 'stopped';
+var RUNNING = 'running';
+
+var Scheduler = (function () {
+	function Scheduler(renderCallbacks, logger, fps) {
+		_classCallCheck(this, Scheduler);
+
+		this.renderCallbacks = renderCallbacks;
+		this.logger = logger;
+
+		this.setFps(fps || DEFAULT_FPS);
+
+		this.stop();
+	}
+
+	_createClass(Scheduler, [{
+		key: 'setState',
+		value: function setState(state) {
+			this.state = state;
+			this.logger.log('Scheduler - setting state ' + state);
+		}
+	}, {
+		key: 'run',
+		value: function run() {
+			this.setState(RUNNING);
+			this.raf_ = requestAnimationFrame(this.step_.bind(this));
+		}
+	}, {
+		key: 'stop',
+		value: function stop() {
+			if (this.state == STOPPED) {
+				return;
+			}
+
+			this.lastTimestamp_ = 0;
+			this.setState(STOPPED);
+
+			if (this.raf_) {
+				cancelAnimationFrame(this.raf_);
+			}
+			this.raf_ = null;
+		}
+	}, {
+		key: 'step',
+		value: function step() {
+			this.raf_ = requestAnimationFrame(this.step_.bind(this));
+		}
+	}, {
+		key: 'step_',
+		value: function step_(timestamp) {
+			var progress = timestamp - this.lastTimestamp_;
+			this.logger.log('Scheduler - step_ - timestamp: ' + timestamp + ' - lastTimestamp_: ' + this.lastTimestamp_ + ' - progress: ' + progress);
+			if (progress >= this.frameDuration_) {
+				this.renderCallbacks.forEach(function (cb) {
+					cb(timestamp);
+				});
+				this.lastTimestamp_ = timestamp;
+			}
+			if (this.state == RUNNING) {
+				this.logger.log('Scheduler - scheduling next step_');
+				this.raf_ = requestAnimationFrame(this.step_.bind(this));
+			}
+		}
+	}, {
+		key: 'setFps',
+		value: function setFps(fps) {
+			this.fps_ = fps;
+			this.frameDuration_ = 1 / fps * 1000;
+		}
+	}]);
+
+	return Scheduler;
+})();
+
+;
+module.exports = Scheduler;
+
+},{}],10:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -697,6 +857,29 @@ var Stack = (function () {
 
 module.exports = Stack;
 
-},{}]},{},[2])
+},{}],11:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var Utils = {
+	// From https://gist.github.com/rauschma/1bff02da66472f555c75
+	getGlobalObject: function getGlobalObject() {
+		// Workers don’t have `window`, only `self`
+		if (typeof self !== 'undefined') {
+			return self;
+		}
+		if (typeof global !== 'undefined') {
+			return global;
+		}
+		// Not all environments allow eval and Function
+		// Use only as a last resort:
+		return new Function('return this')();
+	}
+};
+module.exports = Utils;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}]},{},[3])
 
 //# sourceMappingURL=app.js.map

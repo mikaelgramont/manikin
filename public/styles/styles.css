@@ -1,7 +1,5 @@
 body {
 	background: #eee;
-}
-h1 {
 	font-family: helvetica;
 }
 
@@ -12,6 +10,10 @@ p, ul {
 
 main {
 	width: 200px;
+}
+
+.hidden {
+	display: none;
 }
 
 #canvas-container {
@@ -51,7 +53,8 @@ main {
 	text-align: center;
 }
 
-.action-row button {
+.play-stop {
+	width: 50px;
 	padding: 10px;
 }
 
@@ -62,4 +65,13 @@ main {
 
 .action-row.distribute .action {
 	flex-grow: 1;
+}
+
+#fps {
+	width: 30px;
+	padding: 5px;
+}
+
+.action-row label {
+	margin-left: 10px;
 }

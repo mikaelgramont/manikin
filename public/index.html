@@ -14,24 +14,34 @@
 		</div>
 		<div class="action-container">
 			<p class="action-row">
-				<input type="range" class="action" id="frame-id" aria-label="Current frame id" min="0" max="39" value="0">
+				<input type="range" class="action" id="frame-id" aria-label="Current frame id" min="0" max="0" value="0">
 			</p>
 			<p class="action-row distribute">
-				<button onclick="javascript:go()">Play</button>
-				<button>Stop</button>
+				<button id="play-button" class="play-stop">Play</button>
+				<button id="stop-button" class="play-stop hidden">Stop</button>
+				<label>
+					<input id="fps" value="20"> FPS
+				</label>				
 				<label>
 					<input type="checkbox" checked>
 					Loop
 				</label>
 			</p>
-			<p class="action-row distribute">
-				<button id="prev" class="action" aria-label="Previous frame">&lt;</button>
-				<input id="frame-id-value" class="action" aria-label="Current frame id" value="0" type="text">
-				<button id="next" class="action" aria-label="Next frame">&gt;</button>
-			</p>
 		</div>
 	</main>
 	<div id="images"></div>
+	<script>
+		window.manikin = {
+			config: {
+				bodies: [
+					'./bodies/default',
+				],
+				animations: [
+					'./animations/default',
+				]
+			}
+		};
+	</script>
 	<script src="scripts/app.js"></script>
 </body>
 </html>

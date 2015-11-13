@@ -1,0 +1,95 @@
+.sprite {
+    background-image: url(spritesheet-default.png);
+    background-repeat: no-repeat;
+    display: block;
+}
+
+.sprite-arm-left {
+    width: 16px;
+    height: 32px;
+    background-position: -5px -5px;
+}
+
+.sprite-arm-right {
+    width: 16px;
+    height: 32px;
+    background-position: -31px -5px;
+}
+
+.sprite-foot-left {
+    width: 27px;
+    height: 10px;
+    background-position: -57px -5px;
+}
+
+.sprite-foot-right {
+    width: 27px;
+    height: 10px;
+    background-position: -57px -25px;
+}
+
+.sprite-forearm-left {
+    width: 14px;
+    height: 22px;
+    background-position: -94px -5px;
+}
+
+.sprite-forearm-right {
+    width: 14px;
+    height: 22px;
+    background-position: -94px -37px;
+}
+
+.sprite-hand-left {
+    width: 10px;
+    height: 14px;
+    background-position: -5px -69px;
+}
+
+.sprite-hand-right {
+    width: 10px;
+    height: 14px;
+    background-position: -25px -69px;
+}
+
+.sprite-head {
+    width: 22px;
+    height: 29px;
+    background-position: -57px -45px;
+}
+
+.sprite-hips {
+    width: 22px;
+    height: 15px;
+    background-position: -89px -69px;
+}
+
+.sprite-leg-left {
+    width: 14px;
+    height: 22px;
+    background-position: -118px -5px;
+}
+
+.sprite-leg-right {
+    width: 14px;
+    height: 22px;
+    background-position: -118px -37px;
+}
+
+.sprite-thigh-left {
+    width: 16px;
+    height: 32px;
+    background-position: -5px -94px;
+}
+
+.sprite-thigh-right {
+    width: 16px;
+    height: 32px;
+    background-position: -31px -94px;
+}
+
+.sprite-torso {
+    width: 22px;
+    height: 39px;
+    background-position: -57px -94px;
+}
