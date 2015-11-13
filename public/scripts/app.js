@@ -11,41 +11,57 @@ var AnimationInfo = (function () {
 
 		this.duration = duration;
 		this.rotation = animationInfo.rotation;
+		this.position = animationInfo.position;
 		this.parentPart = parentPart;
 	}
 
 	_createClass(AnimationInfo, [{
+		key: 'getInterpolatedLocalPosition',
+		value: function getInterpolatedLocalPosition(frameId) {
+			return this.getInterpolatedLocalProperty_('position', frameId, [0, 0]);
+		}
+	}, {
 		key: 'getInterpolatedLocalRotation',
 		value: function getInterpolatedLocalRotation(frameId) {
+			return this.getInterpolatedLocalProperty_('rotation', frameId, 0);
+		}
+	}, {
+		key: 'getInterpolatedLocalProperty_',
+		value: function getInterpolatedLocalProperty_(property, frameId, defaultValue) {
 			if (frameId < 0) {
 				throw new Error("Negative frameId not allowed.");
 			}
 
-			if (typeof this.rotation[frameId] !== 'undefined') {
-				return this.rotation[frameId];
+			if (typeof this[property] === 'undefined') {
+				// Allow animations to skip properties.
+				return defaultValue;
+			}
+
+			if (typeof this[property][frameId] !== 'undefined') {
+				return this[property][frameId];
 			}
 
 			// 1. Find the previous keyframe.
 			var previousId = frameId;
-			var previousKeyFrameValue = this.rotation[previousId];
+			var previousKeyFrameValue = this[property][previousId];
 			while (typeof previousKeyFrameValue == 'undefined' && previousId > 0) {
 				previousId--;
-				previousKeyFrameValue = this.rotation[previousId];
+				previousKeyFrameValue = this[property][previousId];
 			}
 
 			// 2. Find the next keyframe.
 			var nextId = frameId + 1;
-			var nextKeyFrameValue = this.rotation[nextId];
+			var nextKeyFrameValue = this[property][nextId];
 			while (typeof nextKeyFrameValue == 'undefined') {
 				nextId++;
 
 				if (nextId >= this.duration - 1) {
 					nextId = 0;
-					nextKeyFrameValue = this.rotation[nextId];
+					nextKeyFrameValue = this[property][nextId];
 					break;
 				}
 
-				nextKeyFrameValue = this.rotation[nextId];
+				nextKeyFrameValue = this[property][nextId];
 			}
 
 			// 3. Return the interpolated value.
@@ -55,7 +71,11 @@ var AnimationInfo = (function () {
 			} else {
 				ratio = (frameId - previousId) / (nextId - previousId);
 			}
-			return previousKeyFrameValue + ratio * (nextKeyFrameValue - previousKeyFrameValue);
+			if (Array.isArray(nextKeyFrameValue)) {
+				return [previousKeyFrameValue[0] + ratio * (nextKeyFrameValue[0] - previousKeyFrameValue[0]), previousKeyFrameValue[1] + ratio * (nextKeyFrameValue[1] - previousKeyFrameValue[1])];
+			} else {
+				return previousKeyFrameValue + ratio * (nextKeyFrameValue - previousKeyFrameValue);
+			}
 		}
 	}]);
 
@@ -121,13 +141,13 @@ var ProxyDebugger = require('./proxydebugger');
 var Scheduler = require('./scheduler');
 var Utils = require('./utils');
 
+// Build a logger object.
 var global = Utils.getGlobalObject();
-
 var logger = new Logger(global);
 logger.enabled = false;
 
-// Set to true to see all canvas calls.
-var instrumentContext = false;
+// Set this to true and enable the logger to see all canvas calls.
+var instrumentContext = true;
 
 // Prepare grid.
 Grid.drawGrid(document.getElementById('grid').getContext('2d'), logger);
@@ -153,20 +173,19 @@ if (instrumentContext) {
 
 // Build the body object.
 var body = new Body('default', 'default', [100, 97], logger, function () {
+	var duration = body.getAnimationDuration();
+	elements.frameSlider.max = duration - 1;
+
+	// Build the objects that run the show.
 	var frameRenderFn = function frameRenderFn(frameId) {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		body.renderFrame(frameId, ctx);
 		elements.frameSlider.value = frameId;
 	};
-
-	var duration = body.getAnimationDuration();
-	elements.frameSlider.max = duration - 1;
 	var animationRenderer = new AnimationRenderer(duration, elements.loop.checked, frameRenderFn);
+	var scheduler = new Scheduler([animationRenderer.nextFrame.bind(animationRenderer)], logger, elements.fps.value);
 
-	var schedulerLogger = new Logger(global);
-	schedulerLogger.enabled = false;
-	var scheduler = new Scheduler([animationRenderer.nextFrame.bind(animationRenderer)], schedulerLogger, elements.fps.value);
-
+	// Binding to UI elements.
 	elements.playBtn.addEventListener('click', function () {
 		elements.playBtn.classList.toggle('hidden');
 		elements.stopBtn.classList.toggle('hidden');
@@ -556,7 +575,8 @@ var BodyPart = (function () {
 			for (var f = 0; f < this.duration; f++) {
 
 				var localRotation = this.animationInfo.getInterpolatedLocalRotation(f);
-				var relativePosition = this.relativePosition;
+				var localPosition = this.animationInfo.getInterpolatedLocalPosition(f);
+				var relativePosition = [this.relativePosition[0] + localPosition[0], this.relativePosition[1] + localPosition[1]];
 
 				this.calculatedFrames[f] = {
 					'position': relativePosition,
@@ -589,7 +609,7 @@ var BodyPart = (function () {
 			parentParts.forEach(function (parentPart) {
 				_this2.logger.groupCollapsed('positioning canvas according to ' + parentPart.getName());
 				var frameInfo = parentPart.getCalculatedFrame(frameId);
-				ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
+				ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 				ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
 				ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 				ctx.translate(-parentPart.centerOffset[0], -parentPart.centerOffset[1]);
@@ -608,7 +628,7 @@ var BodyPart = (function () {
 				return;
 			}
 			var frameInfo = this.getCalculatedFrame(frameId);
-			ctx.translate(this.relativePosition[0], this.relativePosition[1]);
+			ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 			ctx.translate(this.centerOffset[0], this.centerOffset[1]);
 			ctx.rotate(Math.PI / 180 * frameInfo.rotation);
 			ctx.translate(-this.centerOffset[0], -this.centerOffset[1]);

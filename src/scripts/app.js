@@ -6,13 +6,13 @@ let ProxyDebugger = require('./proxydebugger');
 let Scheduler = require('./scheduler');
 let Utils = require('./utils');
 
+// Build a logger object.
 let global = Utils.getGlobalObject();
-
 let logger = new Logger(global);
 logger.enabled = false;
 
-// Set to true to see all canvas calls.
-let instrumentContext = false;
+// Set this to true and enable the logger to see all canvas calls.
+let instrumentContext = true;
 
 // Prepare grid.
 Grid.drawGrid(document.getElementById('grid').getContext('2d'), logger);
@@ -38,23 +38,22 @@ if (instrumentContext) {
 
 // Build the body object.
 let body = new Body('default', 'default', [100, 97], logger, () => {
+	let duration = body.getAnimationDuration();
+	elements.frameSlider.max = duration - 1;
+
+	// Build the objects that run the show.
 	let frameRenderFn = (frameId) => {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		body.renderFrame(frameId, ctx);
 		elements.frameSlider.value = frameId;
 	};
-
-	let duration = body.getAnimationDuration();
-	elements.frameSlider.max = duration - 1;
 	let animationRenderer = new AnimationRenderer(duration,
 		elements.loop.checked, frameRenderFn);
-
-	let schedulerLogger = new Logger(global);
-	schedulerLogger.enabled = false;
 	let scheduler = new Scheduler(
 		[animationRenderer.nextFrame.bind(animationRenderer)],
-		schedulerLogger, elements.fps.value);
+		logger, elements.fps.value);
 
+	// Binding to UI elements.
 	elements.playBtn.addEventListener('click', () => {
 		elements.playBtn.classList.toggle('hidden');
 		elements.stopBtn.classList.toggle('hidden');

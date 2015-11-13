@@ -117,7 +117,11 @@ class BodyPart {
 		for(let f = 0; f < this.duration; f++) {
 
 			let localRotation = this.animationInfo.getInterpolatedLocalRotation(f);
-			let relativePosition = this.relativePosition;
+			let localPosition = this.animationInfo.getInterpolatedLocalPosition(f);
+			let relativePosition = [
+				this.relativePosition[0] + localPosition[0],
+				this.relativePosition[1] + localPosition[1]
+			];
 
 			this.calculatedFrames[f] = {
 				'position': relativePosition,
@@ -145,7 +149,7 @@ class BodyPart {
 		parentParts.forEach((parentPart) => {
 			this.logger.groupCollapsed(`positioning canvas according to ${parentPart.getName()}`);
 			let frameInfo = parentPart.getCalculatedFrame(frameId);
-			ctx.translate(parentPart.relativePosition[0], parentPart.relativePosition[1]);
+			ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 			ctx.translate(parentPart.centerOffset[0], parentPart.centerOffset[1]);
 			ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 			ctx.translate(- parentPart.centerOffset[0], - parentPart.centerOffset[1]);
@@ -162,7 +166,7 @@ class BodyPart {
 			return;
 		}
 		let frameInfo = this.getCalculatedFrame(frameId);
-		ctx.translate(this.relativePosition[0], this.relativePosition[1]);
+		ctx.translate(frameInfo.position[0], frameInfo.position[1]);
 		ctx.translate(this.centerOffset[0], this.centerOffset[1]);
 		ctx.rotate((Math.PI / 180) * frameInfo.rotation);
 		ctx.translate(- this.centerOffset[0], - this.centerOffset[1]);
