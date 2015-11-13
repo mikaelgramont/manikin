@@ -106,6 +106,9 @@ var AnimationRenderer = (function () {
 		key: "nextFrame",
 		value: function nextFrame() {
 			this.renderFn_(this.frameId_);
+			if (this.frameId_ > this.duration_) {
+				this.frameId_ = this.frameId_ % this.duration_;
+			}
 
 			if (this.frameId_ < this.duration_ - 1) {
 				this.frameId_ += 1;
@@ -135,6 +138,7 @@ module.exports = AnimationRenderer;
 
 var AnimationRenderer = require('./animationrenderer');
 var Body = require('./body');
+var CompatibilityTester = require('./compatibilitytester');
 var Grid = require('./grid');
 var Logger = require('./logger');
 var ProxyDebugger = require('./proxydebugger');
@@ -147,7 +151,7 @@ var logger = new Logger(global);
 logger.enabled = false;
 
 // Set this to true and enable the logger to see all canvas calls.
-var instrumentContext = true;
+var instrumentContext = false;
 
 // Prepare grid.
 Grid.drawGrid(document.getElementById('grid').getContext('2d'), logger);
@@ -171,8 +175,18 @@ if (instrumentContext) {
 	});
 }
 
+var configs = global.manikinConfig;
+var bodyConfig = configs.bodies[0];
+var animConfig = configs.animations[0];
+
+// TODO: load all these files with promises, and once we have them test them for compatibility.
+var compatibilityTester = new CompatibilityTester(configs.bodies, configs.animations);
+compatibilityTester.buildCompatibilityLists();
+
+// Then setup some listeners to update the list of available animations when switching bodies.
+
 // Build the body object.
-var body = new Body('default', 'default', [100, 97], logger, function () {
+var body = new Body(bodyConfig, animConfig, [100, 97], logger, function () {
 	var duration = body.getAnimationDuration();
 	elements.frameSlider.max = duration - 1;
 
@@ -215,7 +229,7 @@ var body = new Body('default', 'default', [100, 97], logger, function () {
 	});
 });
 
-},{"./animationrenderer":2,"./body":4,"./grid":6,"./logger":7,"./proxydebugger":8,"./scheduler":9,"./utils":11}],4:[function(require,module,exports){
+},{"./animationrenderer":2,"./body":4,"./compatibilitytester":6,"./grid":7,"./logger":8,"./proxydebugger":9,"./scheduler":10,"./utils":12}],4:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -431,7 +445,7 @@ var Body = (function () {
 
 module.exports = Body;
 
-},{"./bodypart":5,"./stack":10}],5:[function(require,module,exports){
+},{"./bodypart":5,"./stack":11}],5:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -649,6 +663,55 @@ module.exports = BodyPart;
 },{"./animationInfo":1}],6:[function(require,module,exports){
 'use strict';
 
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+var CompatibilityTester = (function () {
+	function CompatibilityTester(bodies, animations) {
+		_classCallCheck(this, CompatibilityTester);
+
+		this.bodies = bodies;
+		this.animations = animations;
+
+		this.compatibilityLists = {};
+	}
+
+	_createClass(CompatibilityTester, [{
+		key: 'buildCompatibilityLists',
+		value: function buildCompatibilityLists() {
+			var _this = this;
+
+			this.bodies.forEach(function (bodyName) {
+				_this.compatibilityLists[bodyName] = [];
+				_this.animations.forEach(function (animationName) {
+					if (_this.isCompatible(bodyName, animationName)) {
+						_this.compatibilityLists[bodyName].push(animationName);
+					}
+				});
+			});
+		}
+	}, {
+		key: 'isCompatible',
+		value: function isCompatible(bodyName, animationName) {
+			var isCompatible = true;
+			for (var prop in this.bodies[bodyName]) {
+				if (typeof this.animations[animationName][prop] === 'undefined') {
+					return false;
+				}
+			}
+			return true;
+		}
+	}]);
+
+	return CompatibilityTester;
+})();
+
+module.exports = CompatibilityTester;
+
+},{}],7:[function(require,module,exports){
+'use strict';
+
 var Grid = {
 	drawGrid: function drawGrid(ctx, logger) {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -675,7 +738,7 @@ var Grid = {
 
 module.exports = Grid;
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 
 var Logger = function Logger(global) {
@@ -711,7 +774,7 @@ Logger.prototype.groupEnd = function () {
 
 module.exports = Logger;
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 
 var ProxyDebugger = {
@@ -757,7 +820,7 @@ var ProxyDebugger = {
 
 module.exports = ProxyDebugger;
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -843,7 +906,7 @@ var Scheduler = (function () {
 ;
 module.exports = Scheduler;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -888,7 +951,7 @@ var Stack = (function () {
 
 module.exports = Stack;
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function (global){
 'use strict';
 

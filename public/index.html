@@ -8,6 +8,20 @@
 		<h1>Manikin 2015</h1>
 	</header>
 	<main>
+		<div class="action-container">
+			<p class="action-row">
+				<label>
+					Body:
+					<select id="body"></select>
+				</label>
+			</p>
+			<p class="action-row">
+				<label>
+					Animation:
+					<select id="animation"></select>
+				</label>
+			</p>
+		</div>
 		<div id="canvas-container">
 			<canvas id="grid" class="renderer" width="200" height="200"></canvas>
 			<canvas id="manikin" class="renderer" width="200" height="200"></canvas>
@@ -31,15 +45,13 @@
 	</main>
 	<div id="images"></div>
 	<script>
-		window.manikin = {
-			config: {
-				bodies: [
-					'./bodies/default',
-				],
-				animations: [
-					'./animations/default',
-				]
-			}
+		var manikinConfig = {
+			bodies: [
+				'default',
+			],
+			animations: [
+				'default',
+			]
 		};
 	</script>
 	<script src="scripts/app.js"></script>

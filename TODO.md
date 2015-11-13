@@ -39,10 +39,7 @@ Add possibility to listen to keyframe events to react to them while playing.
 
 # Implementation
 
-
-On page load, give a list of all the bodies and animations available.
-On selection of a body, check all the animations for compatibility
-
+The page should list all bodies and the animations they can load (compatibility testing is done on the server).
 
 # Questions and things to explore
 

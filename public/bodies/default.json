@@ -47,7 +47,7 @@
 			"parentName": "forearm-left",
 			"relativePosition": [2, 21],
 			"centerOffset": [5, 0],
-			"sprite": [25, 69, 10, 14],
+			"sprite": [5, 69, 10, 14],
 			"layer": 0
 		},
 		"arm-right": {

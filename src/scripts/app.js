@@ -1,5 +1,6 @@
 let AnimationRenderer = require('./animationrenderer');
 let Body = require('./body');
+let CompatibilityTester = require('./compatibilitytester');
 let Grid = require('./grid');
 let Logger = require('./logger');
 let ProxyDebugger = require('./proxydebugger');
@@ -12,7 +13,7 @@ let logger = new Logger(global);
 logger.enabled = false;
 
 // Set this to true and enable the logger to see all canvas calls.
-let instrumentContext = true;
+let instrumentContext = false;
 
 // Prepare grid.
 Grid.drawGrid(document.getElementById('grid').getContext('2d'), logger);
@@ -36,8 +37,19 @@ if (instrumentContext) {
 	});
 }
 
+let configs = global.manikinConfig;
+let bodyConfig = configs.bodies[0];
+let animConfig = configs.animations[0];
+
+// TODO: load all these files with promises, and once we have them test them for compatibility.
+let compatibilityTester = new CompatibilityTester(configs.bodies, configs.animations);
+compatibilityTester.buildCompatibilityLists();
+
+// Then setup some listeners to update the list of available animations when switching bodies.
+
+
 // Build the body object.
-let body = new Body('default', 'default', [100, 97], logger, () => {
+let body = new Body(bodyConfig, animConfig, [100, 97], logger, () => {
 	let duration = body.getAnimationDuration();
 	elements.frameSlider.max = duration - 1;
 
