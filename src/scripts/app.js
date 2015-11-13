@@ -22,6 +22,7 @@ let elements = {
 	stopBtn: document.getElementById('stop-button'),
 	frameSlider: document.getElementById('frame-id'),
 	fps: document.getElementById('fps'),
+	loop: document.getElementById('loop'),
 }
 
 // Possibly instrument the main context oject.
@@ -45,7 +46,8 @@ let body = new Body('default', 'default', [100, 97], logger, () => {
 
 	let duration = body.getAnimationDuration();
 	elements.frameSlider.max = duration - 1;
-	let animationRenderer = new AnimationRenderer(duration, frameRenderFn);
+	let animationRenderer = new AnimationRenderer(duration,
+		elements.loop.checked, frameRenderFn);
 
 	let schedulerLogger = new Logger(global);
 	schedulerLogger.enabled = false;
@@ -68,14 +70,16 @@ let body = new Body('default', 'default', [100, 97], logger, () => {
 		frameRenderFn(e.currentTarget.value);
 		animationRenderer.setFrameId(e.currentTarget.value);
 	});
-	elements.fps.addEventListener('focus', () => {
-		elements.fps.setSelectionRange(0, elements.fps.value.length);
+	elements.fps.addEventListener('focus', (e) => {
+		e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
 	});
-	elements.fps.addEventListener('keyup', () => {
-		let val = parseInt(elements.fps.value, 10);
+	elements.fps.addEventListener('keyup', (e) => {
+		let val = parseInt(e.currentTarget.value, 10);
 		if (val > 0 && val <= 60) {
 			scheduler.setFps(val);
 		}
-	})
-
+	});
+	elements.loop.addEventListener('click', (e) => {
+		animationRenderer.setLoop(e.currentTarget.checked);
+	});
 });

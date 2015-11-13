@@ -72,10 +72,11 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var AnimationRenderer = (function () {
-	function AnimationRenderer(duration, renderFn) {
+	function AnimationRenderer(duration, doLoop, renderFn) {
 		_classCallCheck(this, AnimationRenderer);
 
 		this.duration_ = duration;
+		this.doLoop_ = doLoop;
 		this.renderFn_ = renderFn;
 
 		this.frameId_ = 0;
@@ -86,8 +87,9 @@ var AnimationRenderer = (function () {
 		value: function nextFrame() {
 			this.renderFn_(this.frameId_);
 
-			this.frameId_ += 1;
-			if (this.frameId_ >= this.duration_) {
+			if (this.frameId_ < this.duration_ - 1) {
+				this.frameId_ += 1;
+			} else if (this.doLoop_) {
 				this.frameId_ = 0;
 			}
 		}
@@ -95,6 +97,11 @@ var AnimationRenderer = (function () {
 		key: "setFrameId",
 		value: function setFrameId(frameId) {
 			this.frameId_ = frameId;
+		}
+	}, {
+		key: "setLoop",
+		value: function setLoop(doLoop) {
+			this.doLoop_ = doLoop;
 		}
 	}]);
 
@@ -129,7 +136,8 @@ var elements = {
 	playBtn: document.getElementById('play-button'),
 	stopBtn: document.getElementById('stop-button'),
 	frameSlider: document.getElementById('frame-id'),
-	fps: document.getElementById('fps')
+	fps: document.getElementById('fps'),
+	loop: document.getElementById('loop')
 };
 
 // Possibly instrument the main context oject.
@@ -153,7 +161,7 @@ var body = new Body('default', 'default', [100, 97], logger, function () {
 
 	var duration = body.getAnimationDuration();
 	elements.frameSlider.max = duration - 1;
-	var animationRenderer = new AnimationRenderer(duration, frameRenderFn);
+	var animationRenderer = new AnimationRenderer(duration, elements.loop.checked, frameRenderFn);
 
 	var schedulerLogger = new Logger(global);
 	schedulerLogger.enabled = false;
@@ -174,14 +182,17 @@ var body = new Body('default', 'default', [100, 97], logger, function () {
 		frameRenderFn(e.currentTarget.value);
 		animationRenderer.setFrameId(e.currentTarget.value);
 	});
-	elements.fps.addEventListener('focus', function () {
-		elements.fps.setSelectionRange(0, elements.fps.value.length);
+	elements.fps.addEventListener('focus', function (e) {
+		e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
 	});
-	elements.fps.addEventListener('keyup', function () {
-		var val = parseInt(elements.fps.value, 10);
+	elements.fps.addEventListener('keyup', function (e) {
+		var val = parseInt(e.currentTarget.value, 10);
 		if (val > 0 && val <= 60) {
 			scheduler.setFps(val);
 		}
+	});
+	elements.loop.addEventListener('click', function (e) {
+		animationRenderer.setLoop(e.currentTarget.checked);
 	});
 });
 
