@@ -4,50 +4,61 @@
 	<link rel="stylesheet" media="all" href="./styles/styles.css">
 </head>
 <body>
-	<header>
-		<h1>Manikin 2015</h1>
-	</header>
-	<main>
-		<div class="action-container">
-			<p class="action-row">
-				<label>
-					Body:
-					<select id="body"></select>
-				</label>
-			</p>
-			<p class="action-row">
-				<label>
-					Animation:
-					<select id="animation"></select>
-				</label>
-			</p>
-		</div>
-		<div id="canvas-container">
-			<canvas id="grid" class="renderer" width="200" height="200"></canvas>
-			<canvas id="manikin" class="renderer" width="200" height="200"></canvas>
-		</div>
-		<div class="action-container">
-			<p class="action-row">
-				<input type="range" class="action" id="frame-id" aria-label="Current frame id" min="0" max="0" value="0">
-			</p>
-			<p class="action-row distribute">
-				<button id="play-button" class="play-stop">Play</button>
-				<button id="stop-button" class="play-stop hidden">Stop</button>
-				<label>
-					<input id="fps" value="30"> FPS
-				</label>				
-				<label>
-					<input type="checkbox" id="loop" checked>
-					Loop
-				</label>
-			</p>
-		</div>
-	</main>
+	<div id="page">
+		<header>
+			<h1>Manikin 2015</h1>
+		</header>
+		<main>
+			<div class="action-container" style="display: none;">
+				<p class="action-row">
+					<label>
+						Body:
+						<select id="body"></select>
+					</label>
+				</p>
+				<p class="action-row">
+					<label>
+						Animation:
+						<select id="animation"></select>
+					</label>
+				</p>
+			</div>
+			<div id="canvas-container">
+				<canvas id="grid" class="renderer" width="200" height="200"></canvas>
+				<canvas id="manikin" class="renderer" width="200" height="200"></canvas>
+			</div>
+			<div class="action-container">
+				<p class="action-row">
+					<input type="range" class="action" id="frame-id" aria-label="Current frame id" min="0" max="0" value="0">				
+				</p>
+				<p class="action-row" id="current-frame">0</p>
+				<p class="action-row distribute">
+					<button id="play-button" class="play-stop">Play</button>
+					<button id="stop-button" class="play-stop hidden">Stop</button>
+					<label>
+						<input id="fps" value="30"> FPS
+					</label>				
+					<label>
+						<input type="checkbox" id="loop" checked>
+						Loop
+					</label>
+				</p>
+			</div>
+		</main>
+		<aside style="display: none;">
+			<textarea id="animation-dump"></textarea>
+		</aside>
+	</div>
 	<div id="images"></div>
 	<script>
 		var manikinConfig = {
 			bodies: [
-				'default',
+				{
+					name: 'default',
+					compatibleAnimations: [
+						'default'
+					],
+				},
 			],
 			animations: [
 				'default',

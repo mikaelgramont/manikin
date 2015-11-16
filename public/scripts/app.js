@@ -105,11 +105,10 @@ var AnimationRenderer = (function () {
 	_createClass(AnimationRenderer, [{
 		key: "nextFrame",
 		value: function nextFrame() {
-			this.renderFn_(this.frameId_);
 			if (this.frameId_ > this.duration_) {
 				this.frameId_ = this.frameId_ % this.duration_;
 			}
-
+			this.renderFn_(this.frameId_);
 			if (this.frameId_ < this.duration_ - 1) {
 				this.frameId_ += 1;
 			} else if (this.doLoop_) {
@@ -161,7 +160,8 @@ var elements = {
 	stopBtn: document.getElementById('stop-button'),
 	frameSlider: document.getElementById('frame-id'),
 	fps: document.getElementById('fps'),
-	loop: document.getElementById('loop')
+	loop: document.getElementById('loop'),
+	currentFrame: document.getElementById('current-frame')
 };
 
 // Possibly instrument the main context oject.
@@ -176,8 +176,9 @@ if (instrumentContext) {
 }
 
 var configs = global.manikinConfig;
-var bodyConfig = configs.bodies[0];
-var animConfig = configs.animations[0];
+var chosenBody = configs.bodies[0];
+var bodyConfig = chosenBody.name;
+var animConfig = chosenBody.compatibleAnimations[0];
 
 // TODO: load all these files with promises, and once we have them test them for compatibility.
 var compatibilityTester = new CompatibilityTester(configs.bodies, configs.animations);
@@ -195,6 +196,7 @@ var body = new Body(bodyConfig, animConfig, [100, 97], logger, function () {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		body.renderFrame(frameId, ctx);
 		elements.frameSlider.value = frameId;
+		elements.currentFrame.innerHTML = frameId;
 	};
 	var animationRenderer = new AnimationRenderer(duration, elements.loop.checked, frameRenderFn);
 	var scheduler = new Scheduler([animationRenderer.nextFrame.bind(animationRenderer)], logger, elements.fps.value);

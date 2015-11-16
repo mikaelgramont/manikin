@@ -24,6 +24,8 @@ let elements = {
 	frameSlider: document.getElementById('frame-id'),
 	fps: document.getElementById('fps'),
 	loop: document.getElementById('loop'),
+	currentFrame: document.getElementById('current-frame'),
+	animationDump: document.getElementById('animation-dump'),
 }
 
 // Possibly instrument the main context oject.
@@ -38,8 +40,9 @@ if (instrumentContext) {
 }
 
 let configs = global.manikinConfig;
-let bodyConfig = configs.bodies[0];
-let animConfig = configs.animations[0];
+let chosenBody = configs.bodies[0];
+let bodyConfig = chosenBody.name;
+let animConfig = chosenBody.compatibleAnimations[0];
 
 // TODO: load all these files with promises, and once we have them test them for compatibility.
 let compatibilityTester = new CompatibilityTester(configs.bodies, configs.animations);
@@ -58,6 +61,7 @@ let body = new Body(bodyConfig, animConfig, [100, 97], logger, () => {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		body.renderFrame(frameId, ctx);
 		elements.frameSlider.value = frameId;
+		elements.currentFrame.innerHTML = frameId;
 	};
 	let animationRenderer = new AnimationRenderer(duration,
 		elements.loop.checked, frameRenderFn);
@@ -82,6 +86,9 @@ let body = new Body(bodyConfig, animConfig, [100, 97], logger, () => {
 		animationRenderer.setFrameId(e.currentTarget.value);
 	});
 	elements.fps.addEventListener('focus', (e) => {
+		e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
+	});
+	elements.animationDump.addEventListener('focus', (e) => {
 		e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
 	});
 	elements.fps.addEventListener('keyup', (e) => {

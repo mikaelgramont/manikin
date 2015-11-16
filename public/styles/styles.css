@@ -8,8 +8,13 @@ p, ul {
 	padding: 0;
 }
 
-main {
+#page {
+	margin: 0 auto;
 	width: 200px;
+}
+
+header {
+	text-align: center;
 }
 
 .hidden {
@@ -65,6 +70,10 @@ main {
 
 .action-row.distribute .action {
 	flex-grow: 1;
+}
+
+#current-frame {
+	text-align: center;
 }
 
 #fps {

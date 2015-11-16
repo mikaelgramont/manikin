@@ -8,11 +8,10 @@ class AnimationRenderer {
 	}
 
 	nextFrame() {
-		this.renderFn_(this.frameId_);
 		if (this.frameId_ > this.duration_) {
 			this.frameId_ = this.frameId_ % this.duration_;
 		}
-
+		this.renderFn_(this.frameId_);
 		if (this.frameId_ < this.duration_ - 1) {
 			this.frameId_ += 1;
 		} else if (this.doLoop_) {
