@@ -5,9 +5,10 @@ const ANIMATIONS_PATH = './animations';
 const BODIES_PATH = './bodies';
 
 class Body {
-	constructor(bodyConfigFilename, animationConfigFilename, absolutePosition, logger, afterReady) {
+	constructor(bodyConfigFilename, animationConfigFilename, absolutePosition, configOverrides, logger, afterReady) {
 
 		this.absolutePosition = absolutePosition;
+		this.configOverrides = configOverrides;
 		this.logger = logger;
 
 		this.root = null;
@@ -30,6 +31,11 @@ class Body {
 	}
 
 	setBodyConfig(bodyConfig) {
+		if (this.configOverrides) {
+			if (this.configOverrides.sprite && bodyConfig.parts.root.sprite) {
+				bodyConfig.parts.root.sprite = this.configOverrides.sprite;
+			}
+		}
 		this.bodyConfig = bodyConfig;
 		this.name = this.bodyConfig.name;
 	}

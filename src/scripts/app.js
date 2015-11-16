@@ -44,6 +44,13 @@ let chosenBody = configs.bodies[0];
 let bodyConfig = chosenBody.name;
 let animConfig = chosenBody.compatibleAnimations[0];
 
+let configOverrides = {};
+window.location.search.substring(1).split("&").forEach((queryPart) => {
+	if (queryPart.indexOf('sprite') !== -1) {
+		configOverrides.sprite = queryPart.split("=")[1];
+	}	
+});
+
 // TODO: load all these files with promises, and once we have them test them for compatibility.
 let compatibilityTester = new CompatibilityTester(configs.bodies, configs.animations);
 compatibilityTester.buildCompatibilityLists();
@@ -52,7 +59,7 @@ compatibilityTester.buildCompatibilityLists();
 
 
 // Build the body object.
-let body = new Body(bodyConfig, animConfig, [100, 97], logger, () => {
+let body = new Body(bodyConfig, animConfig, [100, 97], configOverrides, logger, () => {
 	let duration = body.getAnimationDuration();
 	elements.frameSlider.max = duration - 1;
 

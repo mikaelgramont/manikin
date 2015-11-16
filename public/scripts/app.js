@@ -161,7 +161,8 @@ var elements = {
 	frameSlider: document.getElementById('frame-id'),
 	fps: document.getElementById('fps'),
 	loop: document.getElementById('loop'),
-	currentFrame: document.getElementById('current-frame')
+	currentFrame: document.getElementById('current-frame'),
+	animationDump: document.getElementById('animation-dump')
 };
 
 // Possibly instrument the main context oject.
@@ -180,6 +181,13 @@ var chosenBody = configs.bodies[0];
 var bodyConfig = chosenBody.name;
 var animConfig = chosenBody.compatibleAnimations[0];
 
+var configOverrides = {};
+window.location.search.substring(1).split("&").forEach(function (queryPart) {
+	if (queryPart.indexOf('sprite') !== -1) {
+		configOverrides.sprite = queryPart.split("=")[1];
+	}
+});
+
 // TODO: load all these files with promises, and once we have them test them for compatibility.
 var compatibilityTester = new CompatibilityTester(configs.bodies, configs.animations);
 compatibilityTester.buildCompatibilityLists();
@@ -187,7 +195,7 @@ compatibilityTester.buildCompatibilityLists();
 // Then setup some listeners to update the list of available animations when switching bodies.
 
 // Build the body object.
-var body = new Body(bodyConfig, animConfig, [100, 97], logger, function () {
+var body = new Body(bodyConfig, animConfig, [100, 97], configOverrides, logger, function () {
 	var duration = body.getAnimationDuration();
 	elements.frameSlider.max = duration - 1;
 
@@ -220,6 +228,9 @@ var body = new Body(bodyConfig, animConfig, [100, 97], logger, function () {
 	elements.fps.addEventListener('focus', function (e) {
 		e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
 	});
+	elements.animationDump.addEventListener('focus', function (e) {
+		e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
+	});
 	elements.fps.addEventListener('keyup', function (e) {
 		var val = parseInt(e.currentTarget.value, 10);
 		if (val > 0 && val <= 60) {
@@ -245,10 +256,11 @@ var ANIMATIONS_PATH = './animations';
 var BODIES_PATH = './bodies';
 
 var Body = (function () {
-	function Body(bodyConfigFilename, animationConfigFilename, absolutePosition, logger, afterReady) {
+	function Body(bodyConfigFilename, animationConfigFilename, absolutePosition, configOverrides, logger, afterReady) {
 		_classCallCheck(this, Body);
 
 		this.absolutePosition = absolutePosition;
+		this.configOverrides = configOverrides;
 		this.logger = logger;
 
 		this.root = null;
@@ -272,6 +284,11 @@ var Body = (function () {
 	}, {
 		key: 'setBodyConfig',
 		value: function setBodyConfig(bodyConfig) {
+			if (this.configOverrides) {
+				if (this.configOverrides.sprite && bodyConfig.parts.root.sprite) {
+					bodyConfig.parts.root.sprite = this.configOverrides.sprite;
+				}
+			}
 			this.bodyConfig = bodyConfig;
 			this.name = this.bodyConfig.name;
 		}
