@@ -24,9 +24,9 @@
 		},
 		"head": {
 			"parentName": "torso",
-			"relativePosition": [4, -26],
+			"relativePosition": [0, -29],
 			"centerOffset": [11, 28],
-			"sprite": [57, 45, 22, 29],
+			"sprite": [57, 45, 26, 32],
 			"layer": 1
 		},
 		"arm-left": {
