@@ -11,15 +11,15 @@
 		"hips": {
 			"parentName": "root",
 			"relativePosition": [0, 0],
-			"centerOffset": [11, 7],
-			"sprite": [89, 69, 22, 15],
+			"centerOffset": [11, 5],
+			"sprite": [89, 67, 22, 15],
 			"layer": 1
 		},
 		"torso": {
 			"parentName": "hips",
 			"relativePosition": [0, -39],
 			"centerOffset": [11, 39],
-			"sprite": [57, 94, 22, 39],
+			"sprite": [57, 94, 22, 42],
 			"layer": 1
 		},
 		"head": {
@@ -75,14 +75,14 @@
 			"parentName": "hips",
 			"relativePosition": [3, 13],
 			"centerOffset": [2, 2],
-			"sprite": [5, 94, 16, 32],
+			"sprite": [5, 94, 16, 35],
 			"layer": 0
 		},
 		"leg-left": {
 			"parentName": "thigh-left",
 			"relativePosition": [1, 30],
-			"centerOffset": [7, 2],
-			"sprite": [118, 5, 14, 22],
+			"centerOffset": [7, 0],
+			"sprite": [118, 3, 14, 24],
 			"layer": 0
 		},
 		"foot-left": {
@@ -96,15 +96,15 @@
 			"parentName": "hips",
 			"relativePosition": [3, 13],
 			"centerOffset": [2, 2],
-			"sprite": [31, 94, 16, 32],
+			"sprite": [31, 94, 16, 35],
 			"layer": 2
 		},
 		"leg-right": {
 			"parentName": "thigh-right",
 			"relativePosition": [1, 30],
-			"centerOffset": [7, 2],
-			"sprite": [118, 37, 14, 22],
-			"layer": 2
+			"centerOffset": [7, 0],
+			"sprite": [118, 35, 14, 24],
+			"layer": 3
 		},
 		"foot-right": {
 			"parentName": "leg-right",
