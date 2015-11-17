@@ -19,12 +19,12 @@
 			"parentName": "hips",
 			"relativePosition": [0, -39],
 			"centerOffset": [11, 39],
-			"sprite": [57, 94, 22, 42],
+			"sprite": [57, 94, 23, 44],
 			"layer": 1
 		},
 		"head": {
 			"parentName": "torso",
-			"relativePosition": [0, -29],
+			"relativePosition": [4, -26],
 			"centerOffset": [11, 28],
 			"sprite": [57, 45, 22, 29],
 			"layer": 1
