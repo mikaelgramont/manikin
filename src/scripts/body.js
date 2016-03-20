@@ -55,12 +55,12 @@ class Body {
 				} else {
 					reject(Error(req.statusText));
 				}
-			}.bind(this);
+			};
 			req.onerror = () => {
 				reject();
-			}.bind(this);
+			};
 			req.send();
-		}.bind(this));
+		});
 		return p;
 	}
 
