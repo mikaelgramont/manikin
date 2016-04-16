@@ -40,13 +40,3 @@ Add possibility to listen to keyframe events to react to them while playing.
 # Implementation
 
 The page should list all bodies and the animations they can load (compatibility testing is done on the server).
-
-# Questions and things to explore
-
-- Integration of ES6, Jasmine and watch-bundling
-- How to pass data between parent page (index.html) and a Babel-compiled ES6 bundle or between bundles?
-
-# ES6 compilation resources:
-
-- https://gist.github.com/danharper/3ca2273125f500429945
-- https://github.com/ampproject/amphtml/blob/master/gulpfile.js

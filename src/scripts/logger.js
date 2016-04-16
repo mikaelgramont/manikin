@@ -1,32 +1,39 @@
-let Logger = function(global) {
-	this.enabled = true;
+class Logger {
+	constructor(global) {
+		this.enabled_ = typeof(global.console) != 'undefined';
+		this._logger = global.console;
+	}
 
-	this._logger = global.console || {
-		log: function() {},
-		group: function() {},
-		groupCollapsed: function() {},
-		groupEnd: function() {},
-	};
-};
-Logger.prototype.log = function() {
-	if (this.enabled) {
-		this._logger.log.apply(console, arguments);
+	enable() {
+		this.enabled_ = true;
 	}
-}
-Logger.prototype.group = function() {
-	if (this.enabled) {
-		this._logger.group.apply(console, arguments);
-	}
-}
-Logger.prototype.groupCollapsed = function() {
-	if (this.enabled) {
-		this._logger.groupCollapsed.apply(console, arguments);
-	}
-}
-Logger.prototype.groupEnd = function() {
-	if (this.enabled) {
-		this._logger.groupEnd.apply(console, arguments);
-	}
-}
 
+	disable() {
+		this.enabled_ = false;
+	}
+
+	log() {
+		if (this.enabled_) {
+			this._logger.log.apply(this._logger, arguments);
+		}
+	}
+
+	group() {
+		if (this.enabled_) {
+			this._logger.group.apply(this._logger, arguments);
+		}
+	}
+
+	groupCollapsed() {
+		if (this.enabled_) {
+			this._logger.groupCollapsed.apply(this._logger, arguments);
+		}
+	}
+
+	groupEnd() {
+		if (this.enabled_) {
+			this._logger.groupEnd.apply(this._logger, arguments);
+		}
+	}
+}
 module.exports = Logger;
