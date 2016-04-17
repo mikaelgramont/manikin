@@ -19,8 +19,8 @@
     "watchify": "^3.7.0"
   },
   "scripts": {
-    "build": "browserify src/scripts/app.js > public/scripts/bundle.js",
-    "test": "karma start"
+    "build": "watchify src/scripts/app.js -o public/scripts/bundle.js",
+    "tests": "karma start"
   },
   "repository": {
     "type": "git",
